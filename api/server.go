@@ -21,7 +21,7 @@ func NewServer(
 
 	mux := mux.NewRouter()
 
-	// var handler http.Handler = mux
+	// //var handler http.Handler = mux
 
 	AddRoutes(mux, logger, config, db)
 	return mux
