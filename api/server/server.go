@@ -1,9 +1,9 @@
-package api
+package server
 
 import (
-	"database/sql"
+	"example/dashboard/api/db"
 	"example/dashboard/config"
-	"log/slog"
+	"example/dashboard/util"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -14,9 +14,9 @@ type Server struct {
 }
 
 func NewServer(
-	logger *slog.Logger,
+	logger util.Logger,
 	config *config.Config,
-	db *sql.DB,
+	db db.DbConn,
 ) http.Handler {
 
 	mux := mux.NewRouter()

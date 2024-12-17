@@ -1,47 +1,42 @@
 package main
 
 import (
-	"database/sql"
+	"context"
+	"example/dashboard/api/db"
+	"example/dashboard/api/server"
+	"example/dashboard/config"
+	"example/dashboard/util"
 	"log"
-	"log/slog"
 	"net"
 	"net/http"
-	"os"
-
-	"example/dashboard/api"
-	"example/dashboard/config"
 
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file" // Import the file source driver
-	"github.com/joho/godotenv"
-	_ "github.com/lib/pq" // PostgreSQL driver
+	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 func main() {
 
-	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	conf, err := config.InitConfig()
 
-	err := godotenv.Load()
+	// logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	logger := util.NewLogger()
 
-	config, err := config.InitConfig()
-
-	// Database connection
-	dataSourceName := os.Getenv("DB_CONNECTION_STRING")
-
-	db, err := sql.Open("postgres", dataSourceName)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// Run migrations
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	db, err := db.NewDbConn(context.Background(), conf.DatabaseUrl)
 
 	if err != nil {
-		log.Fatalf("Could not start SQL driver: %v", err)
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	m, err := migrate.NewWithDatabaseInstance("file://./migrations", "dashboard", driver)
+	m, err := migrate.New(
+		"file://./migrations",
+		"pgx5://peter:Mynewpw1!@localhost:5432/dashboard",
+	)
+
 	if err != nil {
 		log.Fatalf("Could not start migration: %v", err)
 	}
@@ -51,10 +46,10 @@ func main() {
 		log.Fatalf("Migration failed: %v", err)
 	}
 
-	srv := api.NewServer(logger, config, db)
+	srv := server.NewServer(logger, conf, db)
 
 	httpServer := &http.Server{
-		Addr:    net.JoinHostPort(config.Host, config.Port),
+		Addr:    net.JoinHostPort(conf.Host, conf.Port),
 		Handler: srv,
 	}
 	// Start server

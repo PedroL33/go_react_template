@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080" # Expose backend on host's port 8080
+    depends_on:
+      db: # Ensure Postgres starts before the backend
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgres://postgres:password@db:5432/dashboard?sslmode=disable
+      - HOST=0.0.0.0
+      - PORT=8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://0.0.0.0:8080"]  # Replace with your health check endpoint
+      interval: 30s
+      retries: 3
+    networks:
+      - app_network
+
+  db:
+    image: postgres:15
+    container_name: postgres_container
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dashboard
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+volumes:
+  postgres_data:
+
+networks:
+  app_network:

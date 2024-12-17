@@ -13,6 +13,8 @@ type Config struct {
 	DatabaseUrl string
 	Host        string
 	Port        string
+	JwtSecret   string
+	Env         string
 }
 
 func InitConfig() (*Config, error) {
@@ -21,9 +23,11 @@ func InitConfig() (*Config, error) {
 	}
 
 	config := &Config{
-		DatabaseUrl: os.Getenv("DB_CONNECTION_STRING"),
+		DatabaseUrl: os.Getenv("DATABASE_URL"),
 		Host:        os.Getenv("HOST"),
 		Port:        os.Getenv("PORT"),
+		JwtSecret:   os.Getenv("JWT_SECRET"),
+		Env:         os.Getenv("ENVIRONMENT"),
 	}
 
 	return config, nil

@@ -1,15 +1,51 @@
 package util
 
 import (
+	"bytes"
 	"encoding/json"
-	"fmt"
+	"io"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
-func Decode[T any](r *http.Request) (T, error) {
+func DecodeNew[T any](r *http.Request) (T, error) {
 	var v T
-	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
-		return v, fmt.Errorf("decode json: %w", err)
+
+	defer r.Body.Close()
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		return v, errors.Wrap(err, "util.DecodeInto")
 	}
+
+	r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
+		return v, errors.Wrap(err, "util.DecodeNew")
+	}
+
+	r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
 	return v, nil
+}
+
+func DecodeInto[T any](r *http.Request, value T) error {
+
+	defer r.Body.Close()
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		return errors.Wrap(err, "util.DecodeInto")
+	}
+
+	r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+	if err := json.NewDecoder(r.Body).Decode(value); err != nil {
+		return errors.Wrap(err, "util.DecodeInto")
+	}
+
+	r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+	return nil
 }
