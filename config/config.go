@@ -10,11 +10,12 @@ import (
 )
 
 type Config struct {
-	DatabaseUrl string
-	Host        string
-	Port        string
-	JwtSecret   string
-	Env         string
+	DatabaseUrl  string
+	Host         string
+	Port         string
+	JwtSecret    string
+	Env          string
+	MigrationUrl string
 }
 
 func InitConfig() (*Config, error) {
@@ -23,11 +24,12 @@ func InitConfig() (*Config, error) {
 	}
 
 	config := &Config{
-		DatabaseUrl: os.Getenv("DATABASE_URL"),
-		Host:        os.Getenv("HOST"),
-		Port:        os.Getenv("PORT"),
-		JwtSecret:   os.Getenv("JWT_SECRET"),
-		Env:         os.Getenv("ENVIRONMENT"),
+		DatabaseUrl:  os.Getenv("DATABASE_URL"),
+		Host:         os.Getenv("HOST"),
+		Port:         os.Getenv("PORT"),
+		JwtSecret:    os.Getenv("JWT_SECRET"),
+		Env:          os.Getenv("ENVIRONMENT"),
+		MigrationUrl: os.Getenv("MIGRATION_URL"),
 	}
 
 	return config, nil

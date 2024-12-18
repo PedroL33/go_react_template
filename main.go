@@ -34,7 +34,7 @@ func main() {
 
 	m, err := migrate.New(
 		"file://./migrations",
-		"pgx5://peter:Mynewpw1!@localhost:5432/dashboard",
+		conf.MigrationUrl,
 	)
 
 	if err != nil {
