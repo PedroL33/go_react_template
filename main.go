@@ -7,53 +7,33 @@ import (
 	"example/dashboard/config"
 	"example/dashboard/util"
 	"log"
-	"net"
-	"net/http"
 
-	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 func main() {
-
+	ctx := context.Background()
 	conf, err := config.InitConfig()
 
-	// logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	logger := util.NewLogger()
 
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	db, err := db.NewDbConn(context.Background(), conf.DatabaseUrl)
-
+	dbConn, err := db.NewDbConn(ctx, conf.DatabaseUrl)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-
-	m, err := migrate.New(
-		"file://./migrations",
-		conf.MigrationUrl,
-	)
-
-	if err != nil {
-		log.Fatalf("Could not start migration: %v", err)
-	}
-
-	err = m.Up()
-	if err != nil && err != migrate.ErrNoChange {
-		log.Fatalf("Migration failed: %v", err)
-	}
-
-	srv := server.NewServer(logger, conf, db)
-
-	httpServer := &http.Server{
-		Addr:    net.JoinHostPort(conf.Host, conf.Port),
-		Handler: srv,
-	}
-	// Start server
-	if err := httpServer.ListenAndServe(); err != nil {
-		log.Fatalf("Server failed to start: %v", err)
-	}
+	defer func() {
+		if err := dbConn.Close(ctx); err != nil {
+			logger.Error(err)
+		}
+	}()
+	logger.Info("Database connection established.")
+	db.Migrate(conf, dbConn, logger)
+	logger.Info("Migrations performed and up to date.")
+	srv := server.NewServer(logger, conf, dbConn)
+	srv.Run()
 }

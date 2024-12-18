@@ -20,6 +20,10 @@ func (p *PgxTxWrapper) Begin(ctx context.Context) (DbConn, error) {
 	return nil, errors.New("cannot begin a transaction within a transaction")
 }
 
+func (p *PgxTxWrapper) Close(ctx context.Context) error {
+	return errors.New("transaction cannot be closed")
+}
+
 // Commit implements DbConn
 func (p *PgxTxWrapper) Commit(ctx context.Context) error {
 	return p.tx.Commit(ctx)

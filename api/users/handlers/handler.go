@@ -43,7 +43,6 @@ func (h *usersHandlers) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *usersHandlers) Login(w http.ResponseWriter, r *http.Request) {
-
 	ctx := r.Context()
 
 	user := &models.User{}
@@ -64,4 +63,24 @@ func (h *usersHandlers) Login(w http.ResponseWriter, r *http.Request) {
 
 	util.Encode(w, http.StatusAccepted, loggedInUser)
 	h.logger.HttpSuccess(r)
+}
+
+func (h *usersHandlers) VerifyLogin() {
+
+}
+
+func (h *usersHandlers) VerifyLoginWithRecoveryCode() {
+
+}
+
+func (h *usersHandlers) Begin2faSession() {
+
+}
+
+func (h *usersHandlers) Complete2faSession() {
+
+}
+
+func (h *usersHandlers) ChangePassword() {
+
 }
