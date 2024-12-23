@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"example/dashboard/api/db"
-	"example/dashboard/api/users"
+	"example/dashboard/api/middleware"
 	"example/dashboard/api/users/controller"
 	"example/dashboard/api/users/handlers"
 	"example/dashboard/api/users/store"
@@ -38,6 +38,8 @@ func (s *Server) Run() {
 
 	router := mux.NewRouter()
 
+	s.MapRoutes(router)
+
 	httpServer := &http.Server{
 		Addr:    net.JoinHostPort(s.conf.Host, s.conf.Port),
 		Handler: router,
@@ -71,11 +73,16 @@ func (s *Server) Run() {
 }
 
 func (s *Server) MapRoutes(router *mux.Router) {
+	txnManager := db.NewTransactionManager(s.db)
+
 	usersStore := store.NewUsersStore(s.db)
-	usersController := controller.NewUsersController(s.conf, usersStore, s.logger)
+	usersController := controller.NewUsersController(s.conf, usersStore, txnManager, s.logger)
 	usersHandler := handlers.NewUsersHandlers(s.conf, usersController, s.logger)
 
-	users.MapRoutes(usersHandler, router)
+	mw := middleware.NewMiddlewareManager(s.conf, s.logger, usersStore)
+
+	handlers.MapUsersRoutes(usersHandler, router, mw)
+
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Hello, World!")
 	})

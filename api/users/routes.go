@@ -1,10 +1,12 @@
 package users
 
-import (
-	"github.com/gorilla/mux"
-)
+// import (
+// 	"example/dashboard/api/middleware"
 
-func MapRoutes(h Handler, router *mux.Router) {
-	router.HandleFunc("/user", h.Create).Methods("POST")
-	router.HandleFunc("/login", h.Login).Methods("POST")
-}
+// 	"github.com/gorilla/mux"
+// )
+
+// func MapRoutes(h Handler, router *mux.Router, m middleware.MiddleWareManager) {
+// 	router.HandleFunc("/user", h.Create).Methods("POST")
+// 	router.HandleFunc("/login", h.Login).Methods("POST")
+// }

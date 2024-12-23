@@ -42,55 +42,46 @@ func (e *HttpError) Status() int {
 	return e.status
 }
 
-func NewInternalServerError(reasons interface{}) Error {
+func NewInternalServerError(reasons interface{}, msg string) Error {
 	result := &HttpError{
 		status:  http.StatusInternalServerError,
-		message: "Internal server error.",
+		message: msg,
 		reasons: reasons,
 	}
 	return result
 }
 
-func NewBadGatewayError(reasons interface{}) Error {
+func NewBadGatewayError(reasons interface{}, msg string) Error {
 	result := &HttpError{
 		status:  http.StatusBadGateway,
-		message: "Bad gateway.",
+		message: msg,
 		reasons: reasons,
 	}
 	return result
 }
 
-func NewBadRequestError(reasons interface{}) Error {
+func NewBadRequestError(reasons interface{}, msg string) Error {
 	result := &HttpError{
 		status:  http.StatusBadRequest,
-		message: "Bad request.",
+		message: msg,
 		reasons: reasons,
 	}
 	return result
 }
 
-func NewForbiddenError(reasons interface{}) Error {
+func NewForbiddenError(reasons interface{}, msg string) Error {
 	result := &HttpError{
 		status:  http.StatusForbidden,
-		message: "Forbidden error.",
+		message: msg,
 		reasons: reasons,
 	}
 	return result
 }
 
-func NewNotFoundError(reasons interface{}) Error {
+func NewNotFoundError(reasons interface{}, msg string) Error {
 	result := &HttpError{
 		status:  http.StatusNotFound,
-		message: "Not found.",
-		reasons: reasons,
-	}
-	return result
-}
-
-func InvalidCredentialsError(reasons interface{}) Error {
-	result := &HttpError{
-		status:  http.StatusBadRequest,
-		message: "Invalid credentials.",
+		message: msg,
 		reasons: reasons,
 	}
 	return result

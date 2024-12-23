@@ -7,6 +7,7 @@ package mocks
 import (
 	context "context"
 	models "example/dashboard/api/models"
+	payloads "example/dashboard/api/users/payloads"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,8 +36,38 @@ func (m *MockController) EXPECT() *MockControllerMockRecorder {
 	return m.recorder
 }
 
+// Begin2faSetupSession mocks base method.
+func (m *MockController) Begin2faSetupSession(ctx context.Context, currentUser *models.User) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Begin2faSetupSession", ctx, currentUser)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Begin2faSetupSession indicates an expected call of Begin2faSetupSession.
+func (mr *MockControllerMockRecorder) Begin2faSetupSession(ctx, currentUser interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Begin2faSetupSession", reflect.TypeOf((*MockController)(nil).Begin2faSetupSession), ctx, currentUser)
+}
+
+// Complete2faSetup mocks base method.
+func (m *MockController) Complete2faSetup(ctx context.Context, complete2faSetupRequest *payloads.Complete2faSetupRequest, currentUser *models.User) ([]*models.RecoveryCode, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Complete2faSetup", ctx, complete2faSetupRequest, currentUser)
+	ret0, _ := ret[0].([]*models.RecoveryCode)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Complete2faSetup indicates an expected call of Complete2faSetup.
+func (mr *MockControllerMockRecorder) Complete2faSetup(ctx, complete2faSetupRequest, currentUser interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Complete2faSetup", reflect.TypeOf((*MockController)(nil).Complete2faSetup), ctx, complete2faSetupRequest, currentUser)
+}
+
 // CreateUser mocks base method.
-func (m *MockController) CreateUser(ctx context.Context, user *models.User) (*models.UserWithToken, error) {
+func (m *MockController) CreateUser(ctx context.Context, user *payloads.CreateUserRequest) (*models.UserWithToken, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateUser", ctx, user)
 	ret0, _ := ret[0].(*models.UserWithToken)
@@ -48,6 +79,20 @@ func (m *MockController) CreateUser(ctx context.Context, user *models.User) (*mo
 func (mr *MockControllerMockRecorder) CreateUser(ctx, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockController)(nil).CreateUser), ctx, user)
+}
+
+// Disable2fa mocks base method.
+func (m *MockController) Disable2fa(ctx context.Context, currentUser *models.User) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Disable2fa", ctx, currentUser)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Disable2fa indicates an expected call of Disable2fa.
+func (mr *MockControllerMockRecorder) Disable2fa(ctx, currentUser interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Disable2fa", reflect.TypeOf((*MockController)(nil).Disable2fa), ctx, currentUser)
 }
 
 // Login mocks base method.

@@ -36,47 +36,148 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// BeginTransaction mocks base method.
-func (m *MockStore) BeginTransaction(ctx context.Context) (db.DbConn, error) {
+// Create2faSetupSession mocks base method.
+func (m *MockStore) Create2faSetupSession(ctx context.Context, session *models.TwoFactorSetupSession, tx db.DbConn) (*models.TwoFactorSetupSession, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BeginTransaction", ctx)
-	ret0, _ := ret[0].(db.DbConn)
+	ret := m.ctrl.Call(m, "Create2faSetupSession", ctx, session, tx)
+	ret0, _ := ret[0].(*models.TwoFactorSetupSession)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// BeginTransaction indicates an expected call of BeginTransaction.
-func (mr *MockStoreMockRecorder) BeginTransaction(ctx interface{}) *gomock.Call {
+// Create2faSetupSession indicates an expected call of Create2faSetupSession.
+func (mr *MockStoreMockRecorder) Create2faSetupSession(ctx, session, tx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginTransaction", reflect.TypeOf((*MockStore)(nil).BeginTransaction), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create2faSetupSession", reflect.TypeOf((*MockStore)(nil).Create2faSetupSession), ctx, session, tx)
 }
 
 // CreateUser mocks base method.
-func (m *MockStore) CreateUser(ctx context.Context, user *models.User, createToken func() (string, error)) (*models.UserWithToken, error) {
+func (m *MockStore) CreateUser(ctx context.Context, user *models.User, tx db.DbConn) (*models.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateUser", ctx, user, createToken)
-	ret0, _ := ret[0].(*models.UserWithToken)
+	ret := m.ctrl.Call(m, "CreateUser", ctx, user, tx)
+	ret0, _ := ret[0].(*models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateUser indicates an expected call of CreateUser.
-func (mr *MockStoreMockRecorder) CreateUser(ctx, user, createToken interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) CreateUser(ctx, user, tx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockStore)(nil).CreateUser), ctx, user, createToken)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockStore)(nil).CreateUser), ctx, user, tx)
+}
+
+// Delete2faSetupSession mocks base method.
+func (m *MockStore) Delete2faSetupSession(ctx context.Context, userId int, tx db.DbConn) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete2faSetupSession", ctx, userId, tx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Delete2faSetupSession indicates an expected call of Delete2faSetupSession.
+func (mr *MockStoreMockRecorder) Delete2faSetupSession(ctx, userId, tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete2faSetupSession", reflect.TypeOf((*MockStore)(nil).Delete2faSetupSession), ctx, userId, tx)
+}
+
+// DeleteRecoveryCodes mocks base method.
+func (m *MockStore) DeleteRecoveryCodes(ctx context.Context, userId int, tx db.DbConn) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteRecoveryCodes", ctx, userId, tx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteRecoveryCodes indicates an expected call of DeleteRecoveryCodes.
+func (mr *MockStoreMockRecorder) DeleteRecoveryCodes(ctx, userId, tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRecoveryCodes", reflect.TypeOf((*MockStore)(nil).DeleteRecoveryCodes), ctx, userId, tx)
+}
+
+// DisableTwoFactorAuth mocks base method.
+func (m *MockStore) DisableTwoFactorAuth(ctx context.Context, userId int, tx db.DbConn) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DisableTwoFactorAuth", ctx, userId, tx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DisableTwoFactorAuth indicates an expected call of DisableTwoFactorAuth.
+func (mr *MockStoreMockRecorder) DisableTwoFactorAuth(ctx, userId, tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DisableTwoFactorAuth", reflect.TypeOf((*MockStore)(nil).DisableTwoFactorAuth), ctx, userId, tx)
+}
+
+// EnableTwoFactorAuth mocks base method.
+func (m *MockStore) EnableTwoFactorAuth(ctx context.Context, setupSession *models.TwoFactorSetupSession, tx db.DbConn) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnableTwoFactorAuth", ctx, setupSession, tx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnableTwoFactorAuth indicates an expected call of EnableTwoFactorAuth.
+func (mr *MockStoreMockRecorder) EnableTwoFactorAuth(ctx, setupSession, tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableTwoFactorAuth", reflect.TypeOf((*MockStore)(nil).EnableTwoFactorAuth), ctx, setupSession, tx)
+}
+
+// GenerateRecoveryCode mocks base method.
+func (m *MockStore) GenerateRecoveryCode(ctx context.Context, userId int, tx db.DbConn) (*models.RecoveryCode, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GenerateRecoveryCode", ctx, userId, tx)
+	ret0, _ := ret[0].(*models.RecoveryCode)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GenerateRecoveryCode indicates an expected call of GenerateRecoveryCode.
+func (mr *MockStoreMockRecorder) GenerateRecoveryCode(ctx, userId, tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateRecoveryCode", reflect.TypeOf((*MockStore)(nil).GenerateRecoveryCode), ctx, userId, tx)
+}
+
+// Get2faSetupSessionByUserId mocks base method.
+func (m *MockStore) Get2faSetupSessionByUserId(ctx context.Context, userId int, tx db.DbConn) (*models.TwoFactorSetupSession, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get2faSetupSessionByUserId", ctx, userId, tx)
+	ret0, _ := ret[0].(*models.TwoFactorSetupSession)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Get2faSetupSessionByUserId indicates an expected call of Get2faSetupSessionByUserId.
+func (mr *MockStoreMockRecorder) Get2faSetupSessionByUserId(ctx, userId, tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get2faSetupSessionByUserId", reflect.TypeOf((*MockStore)(nil).Get2faSetupSessionByUserId), ctx, userId, tx)
 }
 
 // GetUserByEmail mocks base method.
-func (m *MockStore) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+func (m *MockStore) GetUserByEmail(ctx context.Context, email string, tx db.DbConn) (*models.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserByEmail", ctx, email)
+	ret := m.ctrl.Call(m, "GetUserByEmail", ctx, email, tx)
 	ret0, _ := ret[0].(*models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUserByEmail indicates an expected call of GetUserByEmail.
-func (mr *MockStoreMockRecorder) GetUserByEmail(ctx, email interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) GetUserByEmail(ctx, email, tx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByEmail", reflect.TypeOf((*MockStore)(nil).GetUserByEmail), ctx, email)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByEmail", reflect.TypeOf((*MockStore)(nil).GetUserByEmail), ctx, email, tx)
+}
+
+// GetUserById mocks base method.
+func (m *MockStore) GetUserById(ctx context.Context, userId int, tx db.DbConn) (*models.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserById", ctx, userId, tx)
+	ret0, _ := ret[0].(*models.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserById indicates an expected call of GetUserById.
+func (mr *MockStoreMockRecorder) GetUserById(ctx, userId, tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserById", reflect.TypeOf((*MockStore)(nil).GetUserById), ctx, userId, tx)
 }

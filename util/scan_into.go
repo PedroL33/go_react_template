@@ -1,7 +1,6 @@
 package util
 
 import (
-	"fmt"
 	"reflect"
 
 	"github.com/jackc/pgx/v5"
@@ -13,18 +12,18 @@ func ScanRowIntoStruct(row pgx.Row, dest interface{}) error {
 	// Ensure the destination is a pointer to a struct
 	destVal := reflect.ValueOf(dest)
 	if destVal.Kind() != reflect.Ptr || destVal.Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("destination must be a pointer to a struct")
+		return errors.Wrap(errors.New("destination must be a pointer to a struct"), "util.ScanRowIntoStruct")
 	}
 
 	// Get the struct type and value
 	destType := destVal.Elem().Type()
-
 	// Prepare the slice of arguments for the Scan method
 	var args []interface{}
 
 	// Create a list of pointers to the struct fields
 	for i := 0; i < destType.NumField(); i++ {
 		field := destVal.Elem().Field(i)
+
 		if field.CanSet() {
 			args = append(args, field.Addr().Interface())
 		}

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"strings"
 	"time"
 
@@ -8,11 +9,13 @@ import (
 )
 
 type User struct {
-	Id        string    `json:"id" validate:"omitempty"`
-	Email     string    `json:"email" validate:"required,email,lte=60"`
-	Password  string    `json:"password" validate:"required,lte=30,gte=8"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	Id                 int            `json:"id" validate:"omitempty"`
+	Email              string         `json:"email" validate:"required,email,lte=60"`
+	Password           string         `json:"password" validate:"required,lte=30,gte=8"`
+	TwoFactorSecret    sql.NullString `json:"two_factor_secret" validate:"omitempty"`
+	IsTwoFactorEnabled sql.NullBool   `json:"is_two_factor_enabled" validate:"omitempty"`
+	CreatedAt          time.Time      `json:"created_at"`
+	UpdatedAt          time.Time      `json:"updated_at"`
 }
 
 type UserWithToken struct {
