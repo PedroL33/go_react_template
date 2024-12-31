@@ -7,7 +7,8 @@ import (
 
 type Error interface {
 	Error() string
-	Reasons() string
+	Reasons() interface{}
+	LoggerMessage() string
 	Message() string
 	Status() int
 }
@@ -30,8 +31,12 @@ func (e *HttpError) Error() string {
 	return fmt.Sprintf("status: %d - errors: %s", e.status, e.message)
 }
 
-func (e *HttpError) Reasons() string {
+func (e *HttpError) LoggerMessage() string {
 	return fmt.Sprintf("status: %d - errors: %s - causes: %v", e.status, e.message, e.reasons)
+}
+
+func (e *HttpError) Reasons() interface{} {
+	return e.reasons
 }
 
 func (e *HttpError) Message() string {
@@ -81,6 +86,15 @@ func NewForbiddenError(reasons interface{}, msg string) Error {
 func NewNotFoundError(reasons interface{}, msg string) Error {
 	result := &HttpError{
 		status:  http.StatusNotFound,
+		message: msg,
+		reasons: reasons,
+	}
+	return result
+}
+
+func NewExpiredSessionError(reasons interface{}, msg string) Error {
+	result := &HttpError{
+		status:  http.StatusGone,
 		message: msg,
 		reasons: reasons,
 	}

@@ -82,24 +82,24 @@ func (mr *MockControllerMockRecorder) CreateUser(ctx, user interface{}) *gomock.
 }
 
 // Disable2fa mocks base method.
-func (m *MockController) Disable2fa(ctx context.Context, currentUser *models.User) error {
+func (m *MockController) Disable2fa(ctx context.Context, currentUser *models.User, disable2faRequest *payloads.Disable2faRequest) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Disable2fa", ctx, currentUser)
+	ret := m.ctrl.Call(m, "Disable2fa", ctx, currentUser, disable2faRequest)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Disable2fa indicates an expected call of Disable2fa.
-func (mr *MockControllerMockRecorder) Disable2fa(ctx, currentUser interface{}) *gomock.Call {
+func (mr *MockControllerMockRecorder) Disable2fa(ctx, currentUser, disable2faRequest interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Disable2fa", reflect.TypeOf((*MockController)(nil).Disable2fa), ctx, currentUser)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Disable2fa", reflect.TypeOf((*MockController)(nil).Disable2fa), ctx, currentUser, disable2faRequest)
 }
 
 // Login mocks base method.
-func (m *MockController) Login(ctx context.Context, user *models.User) (*models.UserWithToken, error) {
+func (m *MockController) Login(ctx context.Context, user *models.User) (*payloads.LoginResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Login", ctx, user)
-	ret0, _ := ret[0].(*models.UserWithToken)
+	ret0, _ := ret[0].(*payloads.LoginResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -108,4 +108,63 @@ func (m *MockController) Login(ctx context.Context, user *models.User) (*models.
 func (mr *MockControllerMockRecorder) Login(ctx, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Login", reflect.TypeOf((*MockController)(nil).Login), ctx, user)
+}
+
+// RegenerateRecoveryCodes mocks base method.
+func (m *MockController) RegenerateRecoveryCodes(ctx context.Context, currentUser *models.User) ([]*models.RecoveryCode, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RegenerateRecoveryCodes", ctx, currentUser)
+	ret0, _ := ret[0].([]*models.RecoveryCode)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RegenerateRecoveryCodes indicates an expected call of RegenerateRecoveryCodes.
+func (mr *MockControllerMockRecorder) RegenerateRecoveryCodes(ctx, currentUser interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegenerateRecoveryCodes", reflect.TypeOf((*MockController)(nil).RegenerateRecoveryCodes), ctx, currentUser)
+}
+
+// UpdatePassword mocks base method.
+func (m *MockController) UpdatePassword(ctx context.Context, currentUser *models.User, updatePasswordRequest *payloads.UpdatePasswordRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatePassword", ctx, currentUser, updatePasswordRequest)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdatePassword indicates an expected call of UpdatePassword.
+func (mr *MockControllerMockRecorder) UpdatePassword(ctx, currentUser, updatePasswordRequest interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePassword", reflect.TypeOf((*MockController)(nil).UpdatePassword), ctx, currentUser, updatePasswordRequest)
+}
+
+// VerifyLogin mocks base method.
+func (m *MockController) VerifyLogin(ctx context.Context, verifyLoginRequest *payloads.LoginWithOptCodeRequest) (*payloads.LoginResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifyLogin", ctx, verifyLoginRequest)
+	ret0, _ := ret[0].(*payloads.LoginResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// VerifyLogin indicates an expected call of VerifyLogin.
+func (mr *MockControllerMockRecorder) VerifyLogin(ctx, verifyLoginRequest interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyLogin", reflect.TypeOf((*MockController)(nil).VerifyLogin), ctx, verifyLoginRequest)
+}
+
+// VerifyLoginWithRecoveryCode mocks base method.
+func (m *MockController) VerifyLoginWithRecoveryCode(ctx context.Context, verifyLoginRequest *payloads.LoginWithRecoveryCodeRequest) (*payloads.LoginResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifyLoginWithRecoveryCode", ctx, verifyLoginRequest)
+	ret0, _ := ret[0].(*payloads.LoginResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// VerifyLoginWithRecoveryCode indicates an expected call of VerifyLoginWithRecoveryCode.
+func (mr *MockControllerMockRecorder) VerifyLoginWithRecoveryCode(ctx, verifyLoginRequest interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyLoginWithRecoveryCode", reflect.TypeOf((*MockController)(nil).VerifyLoginWithRecoveryCode), ctx, verifyLoginRequest)
 }

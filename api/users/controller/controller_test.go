@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"database/sql"
 	"example/dashboard/api/models"
 	"example/dashboard/api/users/mocks"
 	"example/dashboard/api/users/payloads"
@@ -77,6 +78,82 @@ func TestUsersController_Login(t *testing.T) {
 	loggedInUser, err := userController.Login(context.TODO(), existingUser)
 	require.NoError(t, err)
 	require.NotNil(t, loggedInUser)
+}
+
+func TestUsersController_VerifyLogin(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStore := mocks.NewMockStore(ctrl)
+	mockTxnManager := mocks.NewMockTransactionManager(ctrl)
+	mockLogger := mocks.NewMockLogger(ctrl)
+	cfg := &config.Config{}
+
+	userController := NewUsersController(cfg, mockStore, mockTxnManager, mockLogger)
+
+	twoFaSetupSession := &models.TwoFactorSetupSession{}
+	twoFaSetupSession.PopulateSecretStringAndReturnBase64QrCode("test@email.com")
+	code, err := totp.GenerateCode(twoFaSetupSession.SecretString, time.Now())
+	require.NoError(t, err)
+	verifyLoginRequest := &payloads.LoginWithOptCodeRequest{
+		OtpCode:        code,
+		LoginSessionId: 1,
+	}
+
+	loginSession := &models.LoginSession{
+		Expiration: time.Now().Add(1 * time.Minute),
+	}
+
+	var currentUser = &models.User{
+		TwoFactorSecret: sql.NullString{
+			Valid:  true,
+			String: twoFaSetupSession.SecretString,
+		},
+	}
+
+	mockStore.EXPECT().GetLoginSessionById(gomock.Any(), gomock.Any(), gomock.Any()).Return(loginSession, nil)
+	mockStore.EXPECT().GetUserById(gomock.Any(), gomock.Any(), gomock.Any()).Return(currentUser, nil)
+
+	loginResponse, err := userController.VerifyLogin(context.TODO(), verifyLoginRequest)
+	require.NoError(t, err)
+	require.NotNil(t, loginResponse)
+}
+
+func TestUsersController_VerifyLoginWithRecoveryCode(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStore := mocks.NewMockStore(ctrl)
+	mockTxnManager := mocks.NewMockTransactionManager(ctrl)
+	mockLogger := mocks.NewMockLogger(ctrl)
+	cfg := &config.Config{}
+
+	userController := NewUsersController(cfg, mockStore, mockTxnManager, mockLogger)
+
+	verifyLoginRequest := &payloads.LoginWithRecoveryCodeRequest{
+		RecoveryCode:   "test code",
+		LoginSessionId: 1,
+	}
+
+	loginSession := &models.LoginSession{
+		Expiration: time.Now().Add(1 * time.Minute),
+	}
+
+	var currentUser = &models.User{Id: 1}
+
+	recoveryCodes := make([]*models.RecoveryCode, 0, 1)
+	recoveryCodes = append(recoveryCodes, &models.RecoveryCode{Code: "test code"})
+
+	mockStore.EXPECT().GetLoginSessionById(gomock.Any(), gomock.Any(), gomock.Any()).Return(loginSession, nil)
+	mockStore.EXPECT().GetUserById(gomock.Any(), gomock.Any(), gomock.Any()).Return(currentUser, nil)
+	mockStore.EXPECT().GetRecoveryCodesByUserId(gomock.Any(), gomock.Any(), gomock.Any()).Return(recoveryCodes, nil)
+	mockStore.EXPECT().RedeemRecoveryCode(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+	loginResponse, err := userController.VerifyLoginWithRecoveryCode(context.TODO(), verifyLoginRequest)
+	require.NoError(t, err)
+	require.NotNil(t, loginResponse)
 }
 
 func TestUsersController_Begin2faSetupSession(t *testing.T) {
@@ -161,11 +238,15 @@ func TestUsersController_Disable2fa(t *testing.T) {
 	cfg := &config.Config{}
 
 	userController := NewUsersController(cfg, mockStore, mockTxnManager, mockLogger)
-
 	user := &models.User{
 		Email:    "test@email.com",
 		Password: "password",
 	}
+
+	disable2faRequest := &payloads.Disable2faRequest{Password: user.Password}
+
+	err := user.HashPassword()
+	require.NoError(t, err)
 
 	mockTxnManager.EXPECT().Begin(context.TODO()).Return(mockDbConn, nil)
 	mockStore.EXPECT().DisableTwoFactorAuth(context.TODO(), gomock.Any(), gomock.Any()).Return(nil)
@@ -173,6 +254,55 @@ func TestUsersController_Disable2fa(t *testing.T) {
 	mockStore.EXPECT().DeleteRecoveryCodes(context.TODO(), gomock.Any(), gomock.Any()).Return(nil)
 	mockDbConn.EXPECT().Commit(context.TODO()).Return(nil)
 
-	err := userController.Disable2fa(context.TODO(), user)
+	err = userController.Disable2fa(context.TODO(), user, disable2faRequest)
 	require.NoError(t, err)
+}
+
+func TestUsersController_UpdatePassword(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStore := mocks.NewMockStore(ctrl)
+	mockTxnManager := mocks.NewMockTransactionManager(ctrl)
+	mockLogger := mocks.NewMockLogger(ctrl)
+	cfg := &config.Config{}
+
+	currentUser := &models.User{Password: "test"}
+	request := &payloads.UpdatePasswordRequest{CurrentPassword: currentUser.Password}
+
+	err := currentUser.HashPassword()
+	require.NoError(t, err)
+
+	userController := NewUsersController(cfg, mockStore, mockTxnManager, mockLogger)
+
+	mockStore.EXPECT().UpdatePassword(context.TODO(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+	err = userController.UpdatePassword(context.TODO(), currentUser, request)
+	require.NoError(t, err)
+}
+
+func TestUsersController_RegenerateRecoveryCodes(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStore := mocks.NewMockStore(ctrl)
+	mockTxnManager := mocks.NewMockTransactionManager(ctrl)
+	mockDbConn := mocks.NewMockDbConn(ctrl)
+	mockLogger := mocks.NewMockLogger(ctrl)
+	cfg := &config.Config{}
+
+	userController := NewUsersController(cfg, mockStore, mockTxnManager, mockLogger)
+
+	mockTxnManager.EXPECT().Begin(context.TODO()).Return(mockDbConn, nil)
+	mockStore.EXPECT().DeleteRecoveryCodes(context.TODO(), gomock.Any(), gomock.Any()).Return(nil)
+	mockStore.EXPECT().GenerateRecoveryCode(context.TODO(), gomock.Any(), gomock.Any()).Return(&models.RecoveryCode{}, nil).Times(10)
+	mockDbConn.EXPECT().Commit(context.TODO()).Return(nil)
+	mockDbConn.EXPECT().Rollback((context.TODO())).Return(nil)
+
+	currentUser := &models.User{Password: "test"}
+	codes, err := userController.RegenerateRecoveryCodes(context.TODO(), currentUser)
+	require.NoError(t, err)
+	require.NotNil(t, codes)
 }

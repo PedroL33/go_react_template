@@ -16,7 +16,7 @@ func DecodeNew[T any](r *http.Request) (T, error) {
 
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		return v, errors.Wrap(err, "util.DecodeInto")
+		return v, errors.Wrap(err, "util.DecodeNew")
 	}
 
 	r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))

@@ -2,6 +2,7 @@ package util
 
 import (
 	"context"
+	http_errors "example/dashboard/errors"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -11,8 +12,9 @@ func ReadRequest(ctx context.Context, r *http.Request, request interface{}) erro
 
 	err := DecodeInto(r, request)
 	if err != nil {
-		return errors.Wrap(err, "util.ReadRequest")
+		// This is only called in the handler level so we want ot return an http error
+		return http_errors.NewInternalServerError(errors.Wrap(err, "util.ReadRequest"), "Error while reading request.")
 	}
 
-	return validate.StructCtx(ctx, request)
+	return ValidateStruct(ctx, request)
 }

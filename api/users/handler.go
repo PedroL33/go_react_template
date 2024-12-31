@@ -10,4 +10,8 @@ type Handler interface {
 	Begin2faSetup(w http.ResponseWriter, r *http.Request)
 	Complete2faSetup(w http.ResponseWriter, r *http.Request)
 	Disable2fa(w http.ResponseWriter, r *http.Request)
+	VerifyLogin(w http.ResponseWriter, r *http.Request)
+	VerifyLoginWithRecoveryCode(w http.ResponseWriter, r *http.Request)
+	ChangePassword(w http.ResponseWriter, r *http.Request)
+	RegenerateRecoveryCodes(w http.ResponseWriter, r *http.Request)
 }

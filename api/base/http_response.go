@@ -6,14 +6,12 @@ import (
 	http_errors "example/dashboard/errors"
 	"example/dashboard/util"
 	"net/http"
-
-	"github.com/go-playground/validator/v10"
 )
 
 type SuccessResponse struct {
-	Status  int
-	Message string
-	Data    interface{}
+	Status  int         `json:"status"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
 }
 
 func SendSuccessResponse(ctx context.Context, w http.ResponseWriter, data interface{}) {
@@ -27,27 +25,27 @@ func SendSuccessResponse(ctx context.Context, w http.ResponseWriter, data interf
 }
 
 type ErrorResponse struct {
-	Status  int
-	Message string
-	Error   interface{}
+	Status  int         `json:"status"`
+	Message string      `json:"message"`
+	Error   interface{} `json:"error"`
 }
 
 func SendErrorResponse(w http.ResponseWriter, err error) {
 
-	var ve validator.ValidationErrors
+	// var ve validator.ValidationErrors
 
-	if errors.As(err, &ve) {
-		out := make(map[string]string)
-		for _, fe := range ve {
-			out[fe.Field()] = fe.Error()
-		}
-		errorResponse := &ErrorResponse{
-			Status:  http.StatusBadRequest,
-			Message: "Failed validation",
-			Error:   out,
-		}
-		util.Encode(w, http.StatusBadRequest, errorResponse)
-	}
+	// if errors.As(err, &ve) {
+	// 	out := make(map[string]string)
+	// 	for _, fe := range ve {
+	// 		out[fe.Field()] = fe.Error()
+	// 	}
+	// 	errorResponse := &ErrorResponse{
+	// 		Status:  http.StatusUnprocessableEntity,
+	// 		Message: "Failed validation",
+	// 		Error:   out,
+	// 	}
+	// 	util.Encode(w, http.StatusUnprocessableEntity, errorResponse)
+	// }
 
 	var httpError *http_errors.HttpError
 
@@ -55,7 +53,7 @@ func SendErrorResponse(w http.ResponseWriter, err error) {
 		errorResponse := &ErrorResponse{
 			Status:  httpError.Status(),
 			Message: httpError.Message(),
-			Error:   httpError.Error(),
+			Error:   httpError.Reasons(),
 		}
 
 		util.Encode(w, httpError.Status(), errorResponse)

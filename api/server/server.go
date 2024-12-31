@@ -37,7 +37,6 @@ func NewServer(
 func (s *Server) Run() {
 
 	router := mux.NewRouter()
-
 	s.MapRoutes(router)
 
 	httpServer := &http.Server{
@@ -80,6 +79,9 @@ func (s *Server) MapRoutes(router *mux.Router) {
 	usersHandler := handlers.NewUsersHandlers(s.conf, usersController, s.logger)
 
 	mw := middleware.NewMiddlewareManager(s.conf, s.logger, usersStore)
+
+	// Apply cors mw
+	router.Use(mw.Cors)
 
 	handlers.MapUsersRoutes(usersHandler, router, mw)
 

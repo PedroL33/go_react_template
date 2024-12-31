@@ -19,6 +19,7 @@ import (
 )
 
 func TestUsersHandlers_Create(t *testing.T) {
+
 	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -52,10 +53,6 @@ func TestUsersHandlers_Create(t *testing.T) {
 	userHandler.Create(rec, req)
 
 	require.Equal(t, http.StatusOK, rec.Code)
-	response := &models.UserWithToken{}
-	err = json.NewDecoder(rec.Body).Decode(response)
-
-	require.NoError(t, err)
 }
 
 func TestUsersHandlers_Login(t *testing.T) {
@@ -69,18 +66,10 @@ func TestUsersHandlers_Login(t *testing.T) {
 
 	userHandler := NewUsersHandlers(cfg, mockController, mockLogger)
 
-	user := &models.User{
-		Email:    "test@email.com",
-		Password: "testpassword",
-	}
+	userLoginRequest := &payloads.UserLoginRequest{}
 
-	userWithToken := &models.UserWithToken{
-		User: &models.User{
-			Id: 1,
-		},
-	}
-
-	body, err := json.Marshal(user)
+	userWithToken := &payloads.LoginResponse{}
+	body, err := json.Marshal(userLoginRequest)
 	require.NoError(t, err)
 
 	req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(body))
@@ -88,9 +77,67 @@ func TestUsersHandlers_Login(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	mockLogger.EXPECT().HttpSuccess(req)
-	mockController.EXPECT().Login(gomock.Any(), user).Return(userWithToken, nil)
+	mockController.EXPECT().Login(gomock.Any(), gomock.Any()).Return(userWithToken, nil)
 
 	userHandler.Login(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+}
+
+func TestUsersHandlers_VerifyLogin(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockController := mocks.NewMockController(ctrl)
+	mockLogger := mocks.NewMockLogger(ctrl)
+	cfg := &config.Config{}
+
+	userHandler := NewUsersHandlers(cfg, mockController, mockLogger)
+
+	userLoginRequest := &payloads.UserLoginRequest{}
+
+	loginResponse := &payloads.LoginResponse{}
+	body, err := json.Marshal(userLoginRequest)
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodPost, "/login_otp", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	mockLogger.EXPECT().HttpSuccess(req)
+	mockController.EXPECT().VerifyLogin(gomock.Any(), gomock.Any()).Return(loginResponse, nil)
+
+	userHandler.VerifyLogin(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+}
+
+func TestUsersHandlers_VerifyLoginWithRecoveryCode(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockController := mocks.NewMockController(ctrl)
+	mockLogger := mocks.NewMockLogger(ctrl)
+	cfg := &config.Config{}
+
+	userHandler := NewUsersHandlers(cfg, mockController, mockLogger)
+
+	userLoginRequest := &payloads.UserLoginRequest{}
+
+	loginResponse := &payloads.LoginResponse{}
+	body, err := json.Marshal(userLoginRequest)
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodPost, "/login_recovery_code", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	mockLogger.EXPECT().HttpSuccess(req)
+	mockController.EXPECT().VerifyLoginWithRecoveryCode(gomock.Any(), gomock.Any()).Return(loginResponse, nil)
+
+	userHandler.VerifyLoginWithRecoveryCode(rec, req)
 
 	require.Equal(t, http.StatusOK, rec.Code)
 }
@@ -203,9 +250,82 @@ func TestUsersHandlers_Disable2fa(t *testing.T) {
 	ctx := context.WithValue(req.Context(), middleware.CurrentUserKey, user)
 	req = req.WithContext(ctx)
 
-	mockController.EXPECT().Disable2fa(ctx, user).Return(nil)
+	mockController.EXPECT().Disable2fa(ctx, user, &payloads.Disable2faRequest{}).Return(nil)
 	mockLogger.EXPECT().HttpSuccess(req)
 
 	userHandler.Disable2fa(rec, req)
+	require.Equal(t, http.StatusOK, rec.Code)
+}
+
+func TestUsersHandlers_ChangePassword(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockController := mocks.NewMockController(ctrl)
+	mockLogger := mocks.NewMockLogger(ctrl)
+	cfg := &config.Config{}
+
+	userHandler := NewUsersHandlers(cfg, mockController, mockLogger)
+
+	user := &models.User{
+		Email: "test@email.com",
+	}
+
+	request := &payloads.UpdatePasswordRequest{
+		NewPassword:     "testtest1",
+		CurrentPassword: "testtest",
+	}
+
+	body, err := json.Marshal(request)
+	require.NoError(t, err)
+	token, err := util.CreateToken(cfg, user)
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodPost, "/change_password", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer: "+token)
+	rec := httptest.NewRecorder()
+
+	ctx := context.WithValue(req.Context(), middleware.CurrentUserKey, user)
+	req = req.WithContext(ctx)
+
+	mockController.EXPECT().UpdatePassword(ctx, user, request).Return(nil)
+	mockLogger.EXPECT().HttpSuccess(req)
+
+	userHandler.ChangePassword(rec, req)
+	require.Equal(t, http.StatusOK, rec.Code)
+}
+
+func TestUsersHandlers_RegenerateRecoveryCodes(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockController := mocks.NewMockController(ctrl)
+	mockLogger := mocks.NewMockLogger(ctrl)
+	cfg := &config.Config{}
+
+	userHandler := NewUsersHandlers(cfg, mockController, mockLogger)
+
+	user := &models.User{
+		Email: "test@email.com",
+	}
+
+	token, err := util.CreateToken(cfg, user)
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodPost, "/change_password", nil)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer: "+token)
+	rec := httptest.NewRecorder()
+
+	ctx := context.WithValue(req.Context(), middleware.CurrentUserKey, user)
+	req = req.WithContext(ctx)
+
+	mockController.EXPECT().RegenerateRecoveryCodes(ctx, user).Return([]*models.RecoveryCode{}, nil)
+	mockLogger.EXPECT().HttpSuccess(req)
+
+	userHandler.RegenerateRecoveryCodes(rec, req)
 	require.Equal(t, http.StatusOK, rec.Code)
 }

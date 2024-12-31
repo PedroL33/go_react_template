@@ -12,10 +12,10 @@ type User struct {
 	Id                 int            `json:"id" validate:"omitempty"`
 	Email              string         `json:"email" validate:"required,email,lte=60"`
 	Password           string         `json:"password" validate:"required,lte=30,gte=8"`
-	TwoFactorSecret    sql.NullString `json:"two_factor_secret" validate:"omitempty"`
-	IsTwoFactorEnabled sql.NullBool   `json:"is_two_factor_enabled" validate:"omitempty"`
-	CreatedAt          time.Time      `json:"created_at"`
-	UpdatedAt          time.Time      `json:"updated_at"`
+	TwoFactorSecret    sql.NullString `json:"twoFactorSecret" validate:"omitempty"`
+	IsTwoFactorEnabled sql.NullBool   `json:"isTwoFactorEnabled" validate:"omitempty"`
+	CreatedAt          time.Time      `json:"createdAt"`
+	UpdatedAt          time.Time      `json:"updatedAt"`
 }
 
 type UserWithToken struct {
@@ -25,6 +25,7 @@ type UserWithToken struct {
 
 func (u *User) Sanitize() {
 	u.Password = ""
+	u.TwoFactorSecret = sql.NullString{}
 }
 
 func (u *User) ComparePasswords(password string) error {

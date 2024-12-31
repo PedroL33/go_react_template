@@ -25,11 +25,15 @@ func NewUsersHandlers(cfg *config.Config, controller users.Controller, logger ut
 }
 
 func MapUsersRoutes(h users.Handler, router *mux.Router, m middleware.MiddleWareManager) {
-	router.HandleFunc("/user", h.Create).Methods("POST")
-	router.HandleFunc("/login", h.Login).Methods("POST")
-	router.HandleFunc("/begin2fa", m.Auth(h.Begin2faSetup)).Methods("POST")
-	router.HandleFunc("/complete2fa", m.Auth(h.Complete2faSetup)).Methods("POST")
-	router.HandleFunc("/disable2fa", m.Auth(h.Disable2fa)).Methods("POST")
+	router.HandleFunc("/user", h.Create).Methods("POST", "OPTIONS")
+	router.HandleFunc("/login", h.Login).Methods("POST", "OPTIONS")
+	router.HandleFunc("/login_otp", h.VerifyLogin).Methods("POST", "OPTIONS")
+	router.HandleFunc("/begin2fa", m.Auth(h.Begin2faSetup)).Methods("POST", "OPTIONS")
+	router.HandleFunc("/complete2fa", m.Auth(h.Complete2faSetup)).Methods("POST", "OPTIONS")
+	router.HandleFunc("/disable2fa", m.Auth(h.Disable2fa)).Methods("POST", "OPTIONS")
+	router.HandleFunc("/login_recovery_code", h.VerifyLoginWithRecoveryCode).Methods("POST", "OPTIONS")
+	router.HandleFunc("/change_password", m.Auth(h.ChangePassword)).Methods("PUT", "OPTIONS")
+	router.HandleFunc("/regenerate_recovery_codes", m.Auth(h.RegenerateRecoveryCodes)).Methods("POST", "OPTIONS")
 }
 
 func (h *usersHandlers) Create(w http.ResponseWriter, r *http.Request) {
@@ -59,17 +63,16 @@ func (h *usersHandlers) Login(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	loginRequest := &payloads.UserLoginRequest{}
 	var err error
-
+	loginRequest := &payloads.UserLoginRequest{}
 	if err = util.ReadRequest(ctx, r, loginRequest); err != nil {
 		h.logger.HttpError(r, err)
 		base.SendErrorResponse(w, err)
 		return
 	}
 
-	var loggedInUser *models.UserWithToken
-	if loggedInUser, err = h.controller.Login(ctx, &models.User{
+	var loginResponse *payloads.LoginResponse
+	if loginResponse, err = h.controller.Login(ctx, &models.User{
 		Email:    loginRequest.Email,
 		Password: loginRequest.Password,
 	}); err != nil {
@@ -77,16 +80,53 @@ func (h *usersHandlers) Login(w http.ResponseWriter, r *http.Request) {
 		base.SendErrorResponse(w, err)
 		return
 	}
+
 	h.logger.HttpSuccess(r)
-	base.SendSuccessResponse(ctx, w, loggedInUser)
+	base.SendSuccessResponse(ctx, w, loginResponse)
 }
 
-func (h *usersHandlers) VerifyLogin() {
+func (h *usersHandlers) VerifyLogin(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
+	var err error
+	verifyLoginRequest := &payloads.LoginWithOptCodeRequest{}
+	if err = util.ReadRequest(ctx, r, verifyLoginRequest); err != nil {
+		h.logger.HttpError(r, err)
+		base.SendErrorResponse(w, err)
+		return
+	}
+
+	var loginResponse *payloads.LoginResponse
+	if loginResponse, err = h.controller.VerifyLogin(ctx, verifyLoginRequest); err != nil {
+		h.logger.HttpError(r, err)
+		base.SendErrorResponse(w, err)
+		return
+	}
+
+	h.logger.HttpSuccess(r)
+	base.SendSuccessResponse(ctx, w, loginResponse)
 }
 
-func (h *usersHandlers) VerifyLoginWithRecoveryCode() {
+func (h *usersHandlers) VerifyLoginWithRecoveryCode(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
+	var err error
+	verifyLoginRequest := &payloads.LoginWithRecoveryCodeRequest{}
+	if err = util.ReadRequest(ctx, r, verifyLoginRequest); err != nil {
+		h.logger.HttpError(r, err)
+		base.SendErrorResponse(w, err)
+		return
+	}
+
+	var loginResponse *payloads.LoginResponse
+	if loginResponse, err = h.controller.VerifyLoginWithRecoveryCode(ctx, verifyLoginRequest); err != nil {
+		h.logger.HttpError(r, err)
+		base.SendErrorResponse(w, err)
+		return
+	}
+
+	h.logger.HttpSuccess(r)
+	base.SendSuccessResponse(ctx, w, loginResponse)
 }
 
 func (h *usersHandlers) Begin2faSetup(w http.ResponseWriter, r *http.Request) {
@@ -96,6 +136,7 @@ func (h *usersHandlers) Begin2faSetup(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		h.logger.HttpError(r, http_errors.NewHttpError(http.StatusInternalServerError, "Error while parsing context", nil))
 		base.SendErrorResponse(w, http_errors.NewHttpError(http.StatusInternalServerError, "Invalid credentials", nil))
+		return
 	}
 
 	var base64QrCode string
@@ -120,6 +161,7 @@ func (h *usersHandlers) Complete2faSetup(w http.ResponseWriter, r *http.Request)
 	if !ok {
 		h.logger.HttpError(r, http_errors.NewHttpError(http.StatusInternalServerError, "Error while parsing context", nil))
 		base.SendErrorResponse(w, http_errors.NewHttpError(http.StatusInternalServerError, "Invalid credentials.", nil))
+		return
 	}
 
 	var err error
@@ -154,19 +196,81 @@ func (h *usersHandlers) Disable2fa(w http.ResponseWriter, r *http.Request) {
 	currentUser, ok := ctx.Value(middleware.CurrentUserKey).(*models.User)
 	if !ok {
 		h.logger.HttpError(r, http_errors.NewHttpError(http.StatusInternalServerError, "Error while parsing context", nil))
-		base.SendErrorResponse(w, http_errors.NewHttpError(http.StatusInternalServerError, "Error while parsing context", nil))
+		base.SendErrorResponse(w, http_errors.NewHttpError(http.StatusInternalServerError, "Invalid credentials.", nil))
+		return
 	}
 
 	var err error
-	if err = h.controller.Disable2fa(ctx, currentUser); err != nil {
+	disable2faRequest := &payloads.Disable2faRequest{}
+	if err = util.ReadRequest(ctx, r, disable2faRequest); err != nil {
 		h.logger.HttpError(r, err)
 		base.SendErrorResponse(w, err)
+		return
+	}
+
+	if err = h.controller.Disable2fa(ctx, currentUser, disable2faRequest); err != nil {
+		h.logger.HttpError(r, err)
+		base.SendErrorResponse(w, err)
+		return
 	}
 
 	h.logger.HttpSuccess(r)
 	base.SendSuccessResponse(ctx, w, "Successfully disabled two factor auth.")
 }
 
-func (h *usersHandlers) ChangePassword() {
+func (h *usersHandlers) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	currentUser, ok := ctx.Value(middleware.CurrentUserKey).(*models.User)
+	if !ok {
+		h.logger.HttpError(r, http_errors.NewHttpError(http.StatusInternalServerError, "Error while parsing context", nil))
+		base.SendErrorResponse(w, http_errors.NewHttpError(http.StatusInternalServerError, "Invalid credentials.", nil))
+	}
 
+	var err error
+	updatePasswordRequest := &payloads.UpdatePasswordRequest{}
+	if err = util.ReadRequest(ctx, r, updatePasswordRequest); err != nil {
+		h.logger.HttpError(r, err)
+		base.SendErrorResponse(w, err)
+		return
+	}
+
+	if err = h.controller.UpdatePassword(ctx, currentUser, updatePasswordRequest); err != nil {
+		h.logger.HttpError(r, err)
+		base.SendErrorResponse(w, err)
+		return
+	}
+
+	h.logger.HttpSuccess(r)
+	base.SendSuccessResponse(ctx, w, "Successfully updated password.")
+}
+
+func (h *usersHandlers) RegenerateRecoveryCodes(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	var err error
+
+	currentUser, ok := ctx.Value(middleware.CurrentUserKey).(*models.User)
+	if !ok {
+		h.logger.HttpError(r, http_errors.NewHttpError(http.StatusInternalServerError, "Error while parsing context", nil))
+		base.SendErrorResponse(w, http_errors.NewHttpError(http.StatusInternalServerError, "Invalid credentials.", nil))
+		return
+	}
+
+	var recoveryCodes []*models.RecoveryCode
+	if recoveryCodes, err = h.controller.RegenerateRecoveryCodes(ctx, currentUser); err != nil {
+		h.logger.HttpError(r, err)
+		base.SendErrorResponse(w, err)
+		return
+	}
+
+	codes := make([]string, 0, len(recoveryCodes))
+	for _, code := range recoveryCodes {
+		codes = append(codes, code.Code)
+	}
+
+	response := &payloads.RegenerateRecoveryCodesResponse{
+		RecoveryCodes: codes,
+	}
+
+	h.logger.HttpSuccess(r)
+	base.SendSuccessResponse(ctx, w, response)
 }

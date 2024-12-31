@@ -11,6 +11,7 @@ type Middleware func(http.HandlerFunc) http.HandlerFunc
 
 type MiddleWareManager interface {
 	CompileMiddlewares(h http.HandlerFunc, args ...Middleware) http.HandlerFunc
+	Cors(next http.Handler) http.Handler
 	Auth(next http.HandlerFunc) http.HandlerFunc
 }
 

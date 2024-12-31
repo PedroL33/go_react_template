@@ -44,7 +44,7 @@ func (l *logger) HttpError(r *http.Request, err error) {
 	var httpError *http_errors.HttpError
 	var errorMessage string
 	if errors.As(err, &httpError) {
-		errorMessage = httpError.Reasons()
+		errorMessage = httpError.LoggerMessage()
 	} else {
 		l.Warn("Recieved an error that is not an HttpError.")
 		errorMessage = err.Error()

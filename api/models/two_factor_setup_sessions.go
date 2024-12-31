@@ -11,9 +11,9 @@ import (
 )
 
 type TwoFactorSetupSession struct {
-	UserId       int       `json:"user_id"`
-	SecretString string    `json:"secret_string" validate:"required"`
-	CreatedAt    time.Time `json:"created_at" validate:"omitempty"`
+	UserId       int       `json:"userId"`
+	SecretString string    `json:"secretString" validate:"required"`
+	CreatedAt    time.Time `json:"createdAt" validate:"omitempty"`
 	Expiration   time.Time `json:"expiration"`
 }
 
