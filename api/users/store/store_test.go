@@ -20,7 +20,7 @@ func TestUsersStore_CreateUser(t *testing.T) {
 	userStore := NewUsersStore(mockDbConn)
 
 	user := &models.User{
-		Email:    "",
+		Username: "",
 		Password: "",
 	}
 	row := mocks.NewMockDbRow(ctrl)
@@ -34,7 +34,7 @@ func TestUsersStore_CreateUser(t *testing.T) {
 	require.NotNil(t, createdUser)
 }
 
-func TestUsersStore_GetUserById(t *testing.T) {
+func TestUsersStore_GetUserByUsername(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -46,7 +46,7 @@ func TestUsersStore_GetUserById(t *testing.T) {
 	mockDbconn.EXPECT().QueryRow(context.TODO(), gomock.Any(), gomock.Any()).Return(row)
 	row.EXPECT().Scan(gomock.Any()).Return(nil)
 
-	user, err := userStore.GetUserByEmail(context.TODO(), "test@email.com", nil)
+	user, err := userStore.GetUserByUsername(context.TODO(), "username", nil)
 
 	require.NoError(t, err)
 	require.NotNil(t, user)

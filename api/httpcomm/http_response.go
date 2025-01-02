@@ -1,9 +1,8 @@
-package base
+package httpcomm
 
 import (
 	"context"
 	"errors"
-	http_errors "example/dashboard/errors"
 	"example/dashboard/util"
 	"net/http"
 )
@@ -32,22 +31,7 @@ type ErrorResponse struct {
 
 func SendErrorResponse(w http.ResponseWriter, err error) {
 
-	// var ve validator.ValidationErrors
-
-	// if errors.As(err, &ve) {
-	// 	out := make(map[string]string)
-	// 	for _, fe := range ve {
-	// 		out[fe.Field()] = fe.Error()
-	// 	}
-	// 	errorResponse := &ErrorResponse{
-	// 		Status:  http.StatusUnprocessableEntity,
-	// 		Message: "Failed validation",
-	// 		Error:   out,
-	// 	}
-	// 	util.Encode(w, http.StatusUnprocessableEntity, errorResponse)
-	// }
-
-	var httpError *http_errors.HttpError
+	var httpError *HttpError
 
 	if errors.As(err, &httpError) {
 		errorResponse := &ErrorResponse{

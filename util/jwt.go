@@ -12,14 +12,13 @@ import (
 func CreateToken(config *config.Config, user *models.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
-			"Email":            user.Email,
+			"Username":         user.Username,
 			"Id":               user.Id,
 			"TwoFactorEnabled": user.IsTwoFactorEnabled,
 			"Exp":              time.Now().Add(time.Hour * 24).Unix(),
 		})
 
 	tokenString, err := token.SignedString([]byte(config.JwtSecret))
-	// tokenString, err := token.SignedString(config.JwtSecret)
 
 	if err != nil {
 		return "", errors.Wrap(err, "util.CreateToken")

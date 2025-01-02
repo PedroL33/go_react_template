@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"example/dashboard/api/base"
 	"example/dashboard/api/db"
 	"example/dashboard/api/models"
 	"example/dashboard/api/users"
@@ -16,13 +15,11 @@ import (
 
 type userStore struct {
 	db db.DbConn
-	*base.Store
 }
 
 func NewUsersStore(db db.DbConn) users.Store {
 	return &userStore{
-		db:    db,
-		Store: &base.Store{DB: db},
+		db: db,
 	}
 }
 
@@ -30,8 +27,8 @@ func (s *userStore) CreateUser(ctx context.Context, user *models.User, tx db.DbC
 	db := db.GetDb(s.db, tx)
 	row := db.QueryRow(
 		ctx,
-		"INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *",
-		user.Email,
+		"INSERT INTO users (username, password) VALUES ($1, $2) RETURNING *",
+		user.Username,
 		user.Password,
 	)
 
@@ -44,12 +41,12 @@ func (s *userStore) CreateUser(ctx context.Context, user *models.User, tx db.DbC
 	return createdUser, nil
 }
 
-func (s *userStore) GetUserByEmail(ctx context.Context, email string, tx db.DbConn) (*models.User, error) {
+func (s *userStore) GetUserByUsername(ctx context.Context, username string, tx db.DbConn) (*models.User, error) {
 	db := db.GetDb(s.db, tx)
-	row := db.QueryRow(ctx, "SELECT * FROM users WHERE email = $1", email)
+	row := db.QueryRow(ctx, "SELECT * FROM users WHERE username = $1", username)
 	foundUser := &models.User{}
 	if err := util.ScanRowIntoStruct(row, foundUser); err != nil {
-		return nil, errors.Wrap(err, "userStore.GetUserByEmail")
+		return nil, errors.Wrap(err, "userStore.GetUserByUsername")
 	}
 
 	return foundUser, nil

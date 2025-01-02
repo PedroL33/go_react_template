@@ -1,5 +1,16 @@
-import axios, { AxiosError } from "axios";
-import { IBegin2faResponse, IChangePasswordRequest, IComplete2faRequest, IComplete2faResponse, IDisable2faRequest, ILoginRequest, ILoginResponse, ILoginWithOtpCodeRequest, ILoginWithRecoveryCodeRequest, IRegenerateRecoveryCodesResponse } from "types";
+import axios from "axios";
+import { 
+  IBegin2faResponse, 
+  IChangePasswordRequest, 
+  IComplete2faRequest, 
+  IComplete2faResponse, 
+  IDisable2faRequest, 
+  ILoginRequest, 
+  ILoginResponse, 
+  ILoginWithOtpCodeRequest, 
+  ILoginWithRecoveryCodeRequest, 
+  IRegenerateRecoveryCodesResponse 
+} from "types";
 import { parseApiError } from "utils/Error";
 
 export const Login = async (loginRequest: ILoginRequest): Promise<ILoginResponse> => {
@@ -85,7 +96,7 @@ export const DisableTwoFactorAuth = async (authToken: string, disable2faRequest:
         "Authorization": `Bearer: ${authToken}`
       },
     })
-    console.log(response)
+
     return response.data.data
   }catch(err: any) {
     throw parseApiError(err);

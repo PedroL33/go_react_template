@@ -2,9 +2,8 @@ package middleware
 
 import (
 	"context"
-	"example/dashboard/api/base"
+	"example/dashboard/api/httpcomm"
 	"example/dashboard/api/models"
-	http_errors "example/dashboard/errors"
 	"example/dashboard/util"
 	"net/http"
 	"strings"
@@ -20,30 +19,30 @@ func (m *middleWareManager) Auth(next http.HandlerFunc) http.HandlerFunc {
 
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
-			m.logger.HttpError(r, http_errors.NewInternalServerError(err, "Authorization header not found."))
-			base.SendErrorResponse(w, http_errors.NewInternalServerError(err, "Invalid credentials."))
+			m.logger.HttpError(r, httpcomm.NewInternalServerError(err, "Authorization header not found."))
+			httpcomm.SendErrorResponse(w, httpcomm.NewInternalServerError(err, "Invalid credentials."))
 			return
 		}
 
 		token := strings.TrimPrefix(authHeader, "Bearer: ")
 		if token == "" {
-			m.logger.HttpError(r, http_errors.NewInternalServerError(err, "Missing token."))
-			base.SendErrorResponse(w, http_errors.NewInternalServerError(err, "Invalid credentials."))
+			m.logger.HttpError(r, httpcomm.NewInternalServerError(err, "Missing token."))
+			httpcomm.SendErrorResponse(w, httpcomm.NewInternalServerError(err, "Invalid credentials."))
 			return
 		}
 
 		var payload map[string]interface{}
 		if payload, err = util.VerifyToken(m.conf, token); err != nil {
-			m.logger.HttpError(r, http_errors.NewInternalServerError(err, "Error while verifying token."))
-			base.SendErrorResponse(w, http_errors.NewInternalServerError(err, "Invalid credentials."))
+			m.logger.HttpError(r, httpcomm.NewInternalServerError(err, "Error while verifying token."))
+			httpcomm.SendErrorResponse(w, httpcomm.NewInternalServerError(err, "Invalid credentials."))
 			return
 		}
 
 		var currentUser *models.User
-		if userEmail, ok := payload["Email"].(string); ok {
-			if currentUser, err = m.userStore.GetUserByEmail(r.Context(), userEmail, nil); err != nil {
-				m.logger.HttpError(r, http_errors.NewInternalServerError(err, "Invalid token payload."))
-				base.SendErrorResponse(w, http_errors.NewInternalServerError(err, "Invalid credentials."))
+		if username, ok := payload["Username"].(string); ok {
+			if currentUser, err = m.userStore.GetUserByUsername(r.Context(), username, nil); err != nil {
+				m.logger.HttpError(r, httpcomm.NewInternalServerError(err, "Invalid token payload."))
+				httpcomm.SendErrorResponse(w, httpcomm.NewInternalServerError(err, "Invalid credentials."))
 				return
 			}
 		}

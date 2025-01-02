@@ -8,8 +8,7 @@ import (
 	"example/dashboard/api/users/handlers"
 	"example/dashboard/api/users/store"
 	"example/dashboard/config"
-	"example/dashboard/util"
-	"fmt"
+	"example/dashboard/logger"
 	"net"
 	"net/http"
 	"os"
@@ -21,13 +20,13 @@ import (
 )
 
 type Server struct {
-	logger util.Logger
+	logger logger.Logger
 	conf   *config.Config
 	db     db.DbConn
 }
 
 func NewServer(
-	logger util.Logger,
+	logger logger.Logger,
 	conf *config.Config,
 	db db.DbConn,
 ) *Server {
@@ -83,10 +82,6 @@ func (s *Server) MapRoutes(router *mux.Router) {
 	// Apply cors mw
 	router.Use(mw.Cors)
 
+	// Map routes to router
 	handlers.MapUsersRoutes(usersHandler, router, mw)
-
-	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, World!")
-	})
-	router.Handle("/", router.NotFoundHandler)
 }

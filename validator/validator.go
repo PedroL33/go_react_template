@@ -1,8 +1,7 @@
-package util
+package validator
 
 import (
 	"context"
-	http_errors "example/dashboard/errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -35,11 +34,10 @@ func init() {
 		}
 		return name
 	})
-	fmt.Println("Validator initialized")
 }
 
 // Validate struct fields
-func ValidateStruct(ctx context.Context, s interface{}) error {
+func ValidateStruct(ctx context.Context, s interface{}) interface{} {
 
 	err := validate.StructCtx(ctx, s)
 
@@ -52,7 +50,7 @@ func ValidateStruct(ctx context.Context, s interface{}) error {
 		}
 
 		if len(translatedErrors) > 0 {
-			return http_errors.NewHttpError(422, "Validation failed.", translatedErrors)
+			return translatedErrors
 		}
 	}
 

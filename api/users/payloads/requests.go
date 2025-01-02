@@ -1,12 +1,12 @@
 package payloads
 
 type UserLoginRequest struct {
-	Email    string `json:"email"`
+	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
 type CreateUserRequest struct {
-	Email    string `json:"email" validate:"required,email,lte=60"`
+	Username string `json:"username" validate:"required,lte=60"`
 	Password string `json:"password" validate:"required,lte=30,gte=8"`
 }
 

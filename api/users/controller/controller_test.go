@@ -31,15 +31,15 @@ func TestUsersController_CreateUser(t *testing.T) {
 	userController := NewUsersController(cfg, mockStore, mockTxnManager, mockLogger)
 	createUserRequest := &payloads.CreateUserRequest{
 		Password: "password",
-		Email:    "test5@email.com",
+		Username: "username",
 	}
 
 	user := &models.User{
-		Email:    "test5@email.com",
+		Username: "username",
 		Password: "password",
 	}
 
-	mockStore.EXPECT().GetUserByEmail(context.TODO(), "test5@email.com", nil).Return(nil, pgx.ErrNoRows)
+	mockStore.EXPECT().GetUserByUsername(context.TODO(), "username", nil).Return(nil, pgx.ErrNoRows)
 	mockStore.EXPECT().CreateUser(context.TODO(), gomock.Any(), mockDbConn).Return(user, nil)
 	mockTxnManager.EXPECT().Begin(context.TODO()).Return(mockDbConn, nil)
 	mockDbConn.EXPECT().Commit(context.TODO()).Return(nil)
@@ -64,16 +64,16 @@ func TestUsersController_Login(t *testing.T) {
 
 	existingUser := &models.User{
 		Password: "password",
-		Email:    "test5@email.com",
+		Username: "username",
 	}
 	hashedPw, err := bcrypt.GenerateFromPassword([]byte(existingUser.Password), bcrypt.DefaultCost)
 	require.NoError(t, err)
 	loginUser := &models.User{
 		Password: string(hashedPw),
-		Email:    "test5@email.com",
+		Username: "username",
 	}
 
-	mockStore.EXPECT().GetUserByEmail(context.TODO(), gomock.Any(), nil).Return(loginUser, nil)
+	mockStore.EXPECT().GetUserByUsername(context.TODO(), gomock.Any(), nil).Return(loginUser, nil)
 
 	loggedInUser, err := userController.Login(context.TODO(), existingUser)
 	require.NoError(t, err)
@@ -93,7 +93,7 @@ func TestUsersController_VerifyLogin(t *testing.T) {
 	userController := NewUsersController(cfg, mockStore, mockTxnManager, mockLogger)
 
 	twoFaSetupSession := &models.TwoFactorSetupSession{}
-	twoFaSetupSession.PopulateSecretStringAndReturnBase64QrCode("test@email.com")
+	twoFaSetupSession.PopulateSecretStringAndReturnBase64QrCode("username")
 	code, err := totp.GenerateCode(twoFaSetupSession.SecretString, time.Now())
 	require.NoError(t, err)
 	verifyLoginRequest := &payloads.LoginWithOptCodeRequest{
@@ -168,7 +168,7 @@ func TestUsersController_Begin2faSetupSession(t *testing.T) {
 	cfg := &config.Config{}
 
 	currentUser := &models.User{
-		Email:    "test@email.com",
+		Username: "username",
 		Password: "test",
 	}
 
@@ -200,12 +200,12 @@ func TestUsersController_Complete2faSetup(t *testing.T) {
 	userController := NewUsersController(cfg, mockStore, mockTxnManager, mockLogger)
 
 	currentUser := &models.User{
-		Email:    "test@email.com",
+		Username: "username",
 		Password: "password",
 	}
 
 	twoFaSetupSession := &models.TwoFactorSetupSession{}
-	twoFaSetupSession.PopulateSecretStringAndReturnBase64QrCode(currentUser.Email)
+	twoFaSetupSession.PopulateSecretStringAndReturnBase64QrCode(currentUser.Username)
 	code, err := totp.GenerateCode(twoFaSetupSession.SecretString, time.Now())
 	require.NoError(t, err)
 
@@ -239,7 +239,7 @@ func TestUsersController_Disable2fa(t *testing.T) {
 
 	userController := NewUsersController(cfg, mockStore, mockTxnManager, mockLogger)
 	user := &models.User{
-		Email:    "test@email.com",
+		Username: "username",
 		Password: "password",
 	}
 

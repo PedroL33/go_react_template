@@ -16,7 +16,7 @@ export function BuildAuthContextInitialState(): AuthContextState {
     setAuthToken: () => {},
     currentUser: {
       id: -1,
-      email: "",
+      username: "",
       password: "",
       twoFactorSecret: {
         String: "", 

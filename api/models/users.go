@@ -10,7 +10,7 @@ import (
 
 type User struct {
 	Id                 int            `json:"id" validate:"omitempty"`
-	Email              string         `json:"email" validate:"required,email,lte=60"`
+	Username           string         `json:"username" validate:"required,lte=60"`
 	Password           string         `json:"password" validate:"required,lte=30,gte=8"`
 	TwoFactorSecret    sql.NullString `json:"twoFactorSecret" validate:"omitempty"`
 	IsTwoFactorEnabled sql.NullBool   `json:"isTwoFactorEnabled" validate:"omitempty"`
@@ -45,7 +45,6 @@ func (u *User) HashPassword() error {
 }
 
 func (u *User) PrepareCreate() error {
-	u.Email = strings.ToLower(strings.TrimSpace(u.Email))
 	u.Password = strings.TrimSpace(u.Password)
 
 	if err := u.HashPassword(); err != nil {

@@ -1,14 +1,6 @@
-import { useState, useContext } from 'react';
-import { AuthContext } from '../contexts/AuthContext';
-import { ILoginRequest, ILoginResponse } from '../types';
 import { AuthenticatedPage } from '../components/AuthenticatedPage';
 
 export const Dashboard = () => {
-
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [error, setError] = useState<string>("");
-
 
   return (
     <AuthenticatedPage>
@@ -18,7 +10,6 @@ export const Dashboard = () => {
             Dashboard
           </div>
         </h1>
-        <div className="color-red">{error}</div>
       </div>
     </AuthenticatedPage>
   )

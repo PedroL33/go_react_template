@@ -1,6 +1,6 @@
 export interface IUser {
   id: number,
-  email: string,
+  username: string,
   password: string,
   twoFactorSecret: {
     String: string,
@@ -21,7 +21,7 @@ export interface ILoginResponse {
 }
 
 export interface ILoginRequest {
-  email: string,
+  username: string,
   password: string,
 }
 

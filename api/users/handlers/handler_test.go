@@ -31,7 +31,7 @@ func TestUsersHandlers_Create(t *testing.T) {
 	userHandler := NewUsersHandlers(cfg, mockController, mockLogger)
 
 	user := &models.User{
-		Email:    "test@email.com",
+		Username: "username",
 		Password: "testpassword",
 	}
 
@@ -155,7 +155,7 @@ func TestUsersHandlers_Begin2faSetup(t *testing.T) {
 	userHandler := NewUsersHandlers(cfg, mockController, mockLogger)
 
 	user := &models.User{
-		Email: "test@email.com",
+		Username: "username",
 	}
 	var token string
 	token, err = util.CreateToken(cfg, user)
@@ -187,7 +187,7 @@ func TestUsersHandlers_Complete2faSetup(t *testing.T) {
 	cfg := &config.Config{}
 
 	user := &models.User{
-		Email: "test@email.com",
+		Username: "username",
 	}
 
 	request := &payloads.Complete2faSetupRequest{
@@ -228,7 +228,7 @@ func TestUsersHandlers_Disable2fa(t *testing.T) {
 	cfg := &config.Config{}
 
 	user := &models.User{
-		Email: "test@email.com",
+		Username: "username",
 	}
 
 	request := &payloads.Complete2faSetupRequest{
@@ -269,7 +269,7 @@ func TestUsersHandlers_ChangePassword(t *testing.T) {
 	userHandler := NewUsersHandlers(cfg, mockController, mockLogger)
 
 	user := &models.User{
-		Email: "test@email.com",
+		Username: "username",
 	}
 
 	request := &payloads.UpdatePasswordRequest{
@@ -309,7 +309,7 @@ func TestUsersHandlers_RegenerateRecoveryCodes(t *testing.T) {
 	userHandler := NewUsersHandlers(cfg, mockController, mockLogger)
 
 	user := &models.User{
-		Email: "test@email.com",
+		Username: "username",
 	}
 
 	token, err := util.CreateToken(cfg, user)

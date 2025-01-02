@@ -211,21 +211,6 @@ func (mr *MockStoreMockRecorder) GetRecoveryCodesByUserId(ctx, userId, tx interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRecoveryCodesByUserId", reflect.TypeOf((*MockStore)(nil).GetRecoveryCodesByUserId), ctx, userId, tx)
 }
 
-// GetUserByEmail mocks base method.
-func (m *MockStore) GetUserByEmail(ctx context.Context, email string, tx db.DbConn) (*models.User, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserByEmail", ctx, email, tx)
-	ret0, _ := ret[0].(*models.User)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetUserByEmail indicates an expected call of GetUserByEmail.
-func (mr *MockStoreMockRecorder) GetUserByEmail(ctx, email, tx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByEmail", reflect.TypeOf((*MockStore)(nil).GetUserByEmail), ctx, email, tx)
-}
-
 // GetUserById mocks base method.
 func (m *MockStore) GetUserById(ctx context.Context, userId int, tx db.DbConn) (*models.User, error) {
 	m.ctrl.T.Helper()
@@ -239,6 +224,21 @@ func (m *MockStore) GetUserById(ctx context.Context, userId int, tx db.DbConn) (
 func (mr *MockStoreMockRecorder) GetUserById(ctx, userId, tx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserById", reflect.TypeOf((*MockStore)(nil).GetUserById), ctx, userId, tx)
+}
+
+// GetUserByUsername mocks base method.
+func (m *MockStore) GetUserByUsername(ctx context.Context, username string, tx db.DbConn) (*models.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserByUsername", ctx, username, tx)
+	ret0, _ := ret[0].(*models.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserByUsername indicates an expected call of GetUserByUsername.
+func (mr *MockStoreMockRecorder) GetUserByUsername(ctx, username, tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByUsername", reflect.TypeOf((*MockStore)(nil).GetUserByUsername), ctx, username, tx)
 }
 
 // RedeemRecoveryCode mocks base method.

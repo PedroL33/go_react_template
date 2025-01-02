@@ -3,7 +3,7 @@ package middleware
 import (
 	"example/dashboard/api/users"
 	"example/dashboard/config"
-	"example/dashboard/util"
+	"example/dashboard/logger"
 	"net/http"
 )
 
@@ -17,11 +17,11 @@ type MiddleWareManager interface {
 
 type middleWareManager struct {
 	conf      *config.Config
-	logger    util.Logger
+	logger    logger.Logger
 	userStore users.Store
 }
 
-func NewMiddlewareManager(conf *config.Config, logger util.Logger, userStore users.Store) MiddleWareManager {
+func NewMiddlewareManager(conf *config.Config, logger logger.Logger, userStore users.Store) MiddleWareManager {
 	return &middleWareManager{
 		conf:      conf,
 		logger:    logger,

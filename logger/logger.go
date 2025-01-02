@@ -1,9 +1,9 @@
-package util
+package logger
 
 import (
 	"bytes"
 	"errors"
-	http_errors "example/dashboard/errors"
+	"example/dashboard/api/httpcomm"
 	"io"
 	"log/slog"
 	"net/http"
@@ -41,7 +41,7 @@ func (l *logger) Warn(msg string, args ...any) {
 }
 
 func (l *logger) HttpError(r *http.Request, err error) {
-	var httpError *http_errors.HttpError
+	var httpError *httpcomm.HttpError
 	var errorMessage string
 	if errors.As(err, &httpError) {
 		errorMessage = httpError.LoggerMessage()

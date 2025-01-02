@@ -19,7 +19,7 @@ export const deleteLocalStorageCurrentUser = (setCurrentUser: (currentUser: IUse
   localStorage.removeItem('currentUser');
   setCurrentUser({
     id: -1,
-    email: "",
+    username: "",
     password: "",
     twoFactorSecret: {
       String: "", 

@@ -11,7 +11,7 @@ function App() {
   const [authToken, setAuthToken] = useLocalStorage<string>('authToken', "")
   const [currentUser, setCurrentUser] = useLocalStorage<IUser>('currentUser', {
     id: -1,
-    email: "",
+    username: "",
     password: "",
     twoFactorSecret: {
       String: "", 
