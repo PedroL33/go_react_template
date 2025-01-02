@@ -51,6 +51,20 @@ func (mr *MockDbConnMockRecorder) Begin(ctx interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Begin", reflect.TypeOf((*MockDbConn)(nil).Begin), ctx)
 }
 
+// Close mocks base method.
+func (m *MockDbConn) Close(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Close", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Close indicates an expected call of Close.
+func (mr *MockDbConnMockRecorder) Close(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockDbConn)(nil).Close), ctx)
+}
+
 // Commit mocks base method.
 func (m *MockDbConn) Commit(ctx context.Context) error {
 	m.ctrl.T.Helper()

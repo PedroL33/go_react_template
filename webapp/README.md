@@ -1,46 +1,80 @@
-# Getting Started with Create React App
+![reactjs-vite-tailwindcss-boilerplate](https://user-images.githubusercontent.com/16243531/217138979-b854309c-4742-4275-a705-f9fec5158217.jpg)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# React Tailwindcss Boilerplate build with Vite
 
-## Available Scripts
+This is a boilerplate build with Vite, React 18, TypeScript, Vitest, Testing Library, TailwindCSS 3, Eslint and Prettier.
 
-In the project directory, you can run:
+## What is inside?
 
-### `npm start`
+This project uses many tools like:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+- [Vite](https://vitejs.dev)
+- [ReactJS](https://reactjs.org)
+- [TypeScript](https://www.typescriptlang.org)
+- [Vitest](https://vitest.dev)
+- [Testing Library](https://testing-library.com)
+- [Tailwindcss](https://tailwindcss.com)
+- [Eslint](https://eslint.org)
+- [Prettier](https://prettier.io)
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Getting Started
 
-### `npm test`
+### Install
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Create the project.
 
-### `npm run build`
+```bash
+pnpm dlx degit joaopaulomoraes/reactjs-vite-tailwindcss-boilerplate my-app
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Access the project directory.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```bash
+cd my-app
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Install dependencies.
 
-### `npm run eject`
+```bash
+pnpm install
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+Serve with hot reload at <http://localhost:5173>.
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```bash
+pnpm run dev
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+### Lint
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+```bash
+pnpm run lint
+```
 
-## Learn More
+### Typecheck
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```bash
+pnpm run typecheck
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Build
+
+```bash
+pnpm run build
+```
+
+### Test
+
+```bash
+pnpm run test
+```
+
+View and interact with your tests via UI.
+
+```bash
+pnpm run test:ui
+```
+
+## License
+
+This project is licensed under the MIT License.

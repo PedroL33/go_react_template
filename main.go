@@ -5,55 +5,40 @@ import (
 	"example/dashboard/api/db"
 	"example/dashboard/api/server"
 	"example/dashboard/config"
-	"example/dashboard/util"
+	"example/dashboard/logger"
 	"log"
-	"net"
-	"net/http"
 
-	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 func main() {
-
+	ctx := context.Background()
 	conf, err := config.InitConfig()
+	if err != nil {
+		log.Fatalf("Failed to initialize config: %v", err)
+	}
 
-	// logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
-	logger := util.NewLogger()
+	logger := logger.NewLogger()
+
+	dbConn, err := db.NewDbConn(ctx, conf.DatabaseUrl)
 
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
+	defer func() {
+		if err := dbConn.Close(ctx); err != nil {
+			logger.Error(err)
+		}
+	}()
+	logger.Info("Database connection established.")
 
-	db, err := db.NewDbConn(context.Background(), conf.DatabaseUrl)
+	db.Migrate(conf, dbConn, logger)
+	logger.Info("Migrations performed and up to date.")
 
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
+	db.Seed(conf, dbConn, logger)
+	logger.Info("Database seed process complete.")
 
-	m, err := migrate.New(
-		"file://./migrations",
-		"pgx5://peter:Mynewpw1!@localhost:5432/dashboard",
-	)
-
-	if err != nil {
-		log.Fatalf("Could not start migration: %v", err)
-	}
-
-	err = m.Up()
-	if err != nil && err != migrate.ErrNoChange {
-		log.Fatalf("Migration failed: %v", err)
-	}
-
-	srv := server.NewServer(logger, conf, db)
-
-	httpServer := &http.Server{
-		Addr:    net.JoinHostPort(conf.Host, conf.Port),
-		Handler: srv,
-	}
-	// Start server
-	if err := httpServer.ListenAndServe(); err != nil {
-		log.Fatalf("Server failed to start: %v", err)
-	}
+	srv := server.NewServer(logger, conf, dbConn)
+	srv.Run()
 }

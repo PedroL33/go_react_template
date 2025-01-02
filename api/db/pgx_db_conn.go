@@ -23,6 +23,10 @@ func (p *PgxDbConn) Begin(ctx context.Context) (DbConn, error) {
 	return &PgxTxWrapper{tx: tx}, nil
 }
 
+func (p *PgxDbConn) Close(ctx context.Context) error {
+	return p.conn.Close(ctx)
+}
+
 // Commit - Not applicable for PgxDbConn (but required by interface)
 func (p *PgxDbConn) Commit(ctx context.Context) error {
 	return nil // No-op for PgxDbConn

@@ -16,6 +16,7 @@ type DbConn interface {
 	Query(ctx context.Context, sql string, optionsAndArgs ...interface{}) (DbRows, error)
 	QueryRow(ctx context.Context, sql string, optionsAndArgs ...interface{}) DbRow
 	Conn() DbConn
+	Close(ctx context.Context) error
 }
 
 func NewDbConn(ctx context.Context, databaseURL string) (DbConn, error) {

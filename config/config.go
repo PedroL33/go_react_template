@@ -4,17 +4,16 @@ import (
 	"log"
 	"os"
 
-	// "strconv"
-
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	DatabaseUrl string
-	Host        string
-	Port        string
-	JwtSecret   string
-	Env         string
+	DatabaseUrl  string
+	Host         string
+	Port         string
+	JwtSecret    string
+	Env          string
+	MigrationUrl string
 }
 
 func InitConfig() (*Config, error) {
@@ -23,31 +22,13 @@ func InitConfig() (*Config, error) {
 	}
 
 	config := &Config{
-		DatabaseUrl: os.Getenv("DATABASE_URL"),
-		Host:        os.Getenv("HOST"),
-		Port:        os.Getenv("PORT"),
-		JwtSecret:   os.Getenv("JWT_SECRET"),
-		Env:         os.Getenv("ENVIRONMENT"),
+		DatabaseUrl:  os.Getenv("DATABASE_URL"),
+		Host:         os.Getenv("HOST"),
+		Port:         os.Getenv("PORT"),
+		JwtSecret:    os.Getenv("JWT_SECRET"),
+		Env:          os.Getenv("ENVIRONMENT"),
+		MigrationUrl: os.Getenv("MIGRATION_URL"),
 	}
 
 	return config, nil
 }
-
-// // Helper function to get a string value from environment variables with default fallback
-// func getEnv(key, defaultValue string) string {
-// 	if value, exists := os.LookupEnv(key); exists {
-// 		return value
-// 	}
-// 	return defaultValue
-// }
-
-// // Helper function to get a boolean value from environment variables with default fallback
-// func getEnvAsBool(key string, defaultValue bool) bool {
-// 	if value, exists := os.LookupEnv(key); exists {
-// 		b, err := strconv.ParseBool(value)
-// 		if err == nil {
-// 			return b
-// 		}
-// 	}
-// 	return defaultValue
-// }
