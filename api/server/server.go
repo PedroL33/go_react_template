@@ -21,13 +21,13 @@ import (
 
 type Server struct {
 	logger logger.Logger
-	conf   *config.Config
+	conf   *config.AppConfig
 	db     db.DbConn
 }
 
 func NewServer(
 	logger logger.Logger,
-	conf *config.Config,
+	conf *config.AppConfig,
 	db db.DbConn,
 ) *Server {
 	return &Server{logger: logger, conf: conf, db: db}

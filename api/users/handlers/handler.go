@@ -15,11 +15,11 @@ import (
 
 type usersHandlers struct {
 	controller users.Controller
-	cfg        *config.Config
+	cfg        *config.AppConfig
 	logger     logger.Logger
 }
 
-func NewUsersHandlers(cfg *config.Config, controller users.Controller, logger logger.Logger) users.Handler {
+func NewUsersHandlers(cfg *config.AppConfig, controller users.Controller, logger logger.Logger) users.Handler {
 	return &usersHandlers{cfg: cfg, controller: controller, logger: logger}
 }
 

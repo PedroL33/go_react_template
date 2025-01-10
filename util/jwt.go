@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func CreateToken(config *config.Config, user *models.User) (string, error) {
+func CreateToken(config *config.AppConfig, user *models.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
 			"Username":         user.Username,
@@ -27,7 +27,7 @@ func CreateToken(config *config.Config, user *models.User) (string, error) {
 	return tokenString, nil
 }
 
-func VerifyToken(config *config.Config, tokenString string) (map[string]interface{}, error) {
+func VerifyToken(config *config.AppConfig, tokenString string) (map[string]interface{}, error) {
 	claims := jwt.MapClaims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {

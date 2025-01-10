@@ -19,13 +19,13 @@ import (
 )
 
 type usersController struct {
-	cfg        *config.Config
+	cfg        *config.AppConfig
 	usersStore users.Store
 	txnManager db.TransactionManager
 	logger     logger.Logger
 }
 
-func NewUsersController(cfg *config.Config, usersStore users.Store, txnManager db.TransactionManager, logger logger.Logger) users.Controller {
+func NewUsersController(cfg *config.AppConfig, usersStore users.Store, txnManager db.TransactionManager, logger logger.Logger) users.Controller {
 	return &usersController{cfg: cfg, usersStore: usersStore, txnManager: txnManager, logger: logger}
 }
 

@@ -7,7 +7,7 @@ import (
 	"example/dashboard/logger"
 )
 
-func Seed(conf *config.Config, db DbConn, logger logger.Logger) {
+func Seed(conf *config.AppConfig, db DbConn, logger logger.Logger) {
 	ctx := context.Background()
 	row := db.QueryRow(ctx, "SELECT COUNT(*) FROM users")
 

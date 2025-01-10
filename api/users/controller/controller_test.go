@@ -26,7 +26,7 @@ func TestUsersController_CreateUser(t *testing.T) {
 	mockLogger := mocks.NewMockLogger(ctrl)
 	mockTxnManager := mocks.NewMockTransactionManager(ctrl)
 	mockDbConn := mocks.NewMockDbConn(ctrl)
-	cfg := &config.Config{}
+	cfg := &config.AppConfig{}
 
 	userController := NewUsersController(cfg, mockStore, mockTxnManager, mockLogger)
 	createUserRequest := &payloads.CreateUserRequest{
@@ -58,7 +58,7 @@ func TestUsersController_Login(t *testing.T) {
 	mockStore := mocks.NewMockStore(ctrl)
 	mockTxnManager := mocks.NewMockTransactionManager(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
-	cfg := &config.Config{}
+	cfg := &config.AppConfig{}
 
 	userController := NewUsersController(cfg, mockStore, mockTxnManager, mockLogger)
 
@@ -88,7 +88,7 @@ func TestUsersController_VerifyLogin(t *testing.T) {
 	mockStore := mocks.NewMockStore(ctrl)
 	mockTxnManager := mocks.NewMockTransactionManager(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
-	cfg := &config.Config{}
+	cfg := &config.AppConfig{}
 
 	userController := NewUsersController(cfg, mockStore, mockTxnManager, mockLogger)
 
@@ -128,7 +128,7 @@ func TestUsersController_VerifyLoginWithRecoveryCode(t *testing.T) {
 	mockStore := mocks.NewMockStore(ctrl)
 	mockTxnManager := mocks.NewMockTransactionManager(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
-	cfg := &config.Config{}
+	cfg := &config.AppConfig{}
 
 	userController := NewUsersController(cfg, mockStore, mockTxnManager, mockLogger)
 
@@ -165,7 +165,7 @@ func TestUsersController_Begin2faSetupSession(t *testing.T) {
 	mockTxnManager := mocks.NewMockTransactionManager(ctrl)
 	mockDbConn := mocks.NewMockDbConn(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
-	cfg := &config.Config{}
+	cfg := &config.AppConfig{}
 
 	currentUser := &models.User{
 		Username: "username",
@@ -195,7 +195,7 @@ func TestUsersController_Complete2faSetup(t *testing.T) {
 	mockTxnManager := mocks.NewMockTransactionManager(ctrl)
 	mockDbConn := mocks.NewMockDbConn(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
-	cfg := &config.Config{}
+	cfg := &config.AppConfig{}
 
 	userController := NewUsersController(cfg, mockStore, mockTxnManager, mockLogger)
 
@@ -235,7 +235,7 @@ func TestUsersController_Disable2fa(t *testing.T) {
 	mockTxnManager := mocks.NewMockTransactionManager(ctrl)
 	mockDbConn := mocks.NewMockDbConn(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
-	cfg := &config.Config{}
+	cfg := &config.AppConfig{}
 
 	userController := NewUsersController(cfg, mockStore, mockTxnManager, mockLogger)
 	user := &models.User{
@@ -266,7 +266,7 @@ func TestUsersController_UpdatePassword(t *testing.T) {
 	mockStore := mocks.NewMockStore(ctrl)
 	mockTxnManager := mocks.NewMockTransactionManager(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
-	cfg := &config.Config{}
+	cfg := &config.AppConfig{}
 
 	currentUser := &models.User{Password: "test"}
 	request := &payloads.UpdatePasswordRequest{CurrentPassword: currentUser.Password}
@@ -291,7 +291,7 @@ func TestUsersController_RegenerateRecoveryCodes(t *testing.T) {
 	mockTxnManager := mocks.NewMockTransactionManager(ctrl)
 	mockDbConn := mocks.NewMockDbConn(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
-	cfg := &config.Config{}
+	cfg := &config.AppConfig{}
 
 	userController := NewUsersController(cfg, mockStore, mockTxnManager, mockLogger)
 

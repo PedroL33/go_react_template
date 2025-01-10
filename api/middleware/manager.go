@@ -16,12 +16,12 @@ type MiddleWareManager interface {
 }
 
 type middleWareManager struct {
-	conf      *config.Config
+	conf      *config.AppConfig
 	logger    logger.Logger
 	userStore users.Store
 }
 
-func NewMiddlewareManager(conf *config.Config, logger logger.Logger, userStore users.Store) MiddleWareManager {
+func NewMiddlewareManager(conf *config.AppConfig, logger logger.Logger, userStore users.Store) MiddleWareManager {
 	return &middleWareManager{
 		conf:      conf,
 		logger:    logger,

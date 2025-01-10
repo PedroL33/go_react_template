@@ -6,19 +6,19 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:8080" # Expose backend on host's port 8080
+      - "8080:8080"
     depends_on:
-      db: # Ensure Postgres starts before the backend
+      db:
         condition: service_healthy
     environment:
-      - DATABASE_URL=postgres://postgres:password@db:5432/dashboard?sslmode=disable
-      - HOST=0.0.0.0
-      - PORT=8080
-      - JWT_SECRET=vRlfDBem0t0RhSywv2FTmXp+FjUN4GKYMnAmivhsIgw=
-      - ENVIRONMENT=dev
-      - MIGRATION_URL=pgx5://postgres:password@db:5432/dashboard?sslmode=disable
+      - DATABASE_URL=${DATABASE_URL}
+      - HOST=${HOST}
+      - PORT=${PORT}
+      - JWT_SECRET=${JWT_SECRET}
+      - ENVIRONMENT=${ENVIRONMENT}
+      - MIGRATION_URL=${MIGRATION_URL}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://0.0.0.0:8080"]  # Replace with your health check endpoint
+      test: ["CMD", "curl", "-f", "http://0.0.0.0:8080"]
       interval: 30s
       retries: 3
     networks:
@@ -35,8 +35,6 @@ services:
       - backend
     networks:
       - app_network
-    environment:
-      - VITE_BACKEND_URL=http://backend:8080
 
   db:
     image: postgres:15

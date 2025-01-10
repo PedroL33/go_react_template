@@ -7,7 +7,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type Config struct {
+type AppConfig struct {
 	DatabaseUrl  string
 	Host         string
 	Port         string
@@ -16,19 +16,21 @@ type Config struct {
 	MigrationUrl string
 }
 
-func InitConfig() (*Config, error) {
+func NewAppConfig() *AppConfig {
+	return &AppConfig{}
+}
+
+func (ac *AppConfig) Load() error {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, proceeding with environment variables")
 	}
 
-	config := &Config{
-		DatabaseUrl:  os.Getenv("DATABASE_URL"),
-		Host:         os.Getenv("HOST"),
-		Port:         os.Getenv("PORT"),
-		JwtSecret:    os.Getenv("JWT_SECRET"),
-		Env:          os.Getenv("ENVIRONMENT"),
-		MigrationUrl: os.Getenv("MIGRATION_URL"),
-	}
+	ac.DatabaseUrl = os.Getenv("DATABASE_URL")
+	ac.Host = os.Getenv("HOST")
+	ac.Port = os.Getenv("PORT")
+	ac.JwtSecret = os.Getenv("JWT_SECRET")
+	ac.Env = os.Getenv("ENVIRONMENT")
+	ac.MigrationUrl = os.Getenv("MIGRATION_URL")
 
-	return config, nil
+	return nil
 }

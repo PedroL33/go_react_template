@@ -26,7 +26,7 @@ func TestUsersHandlers_Create(t *testing.T) {
 
 	mockController := mocks.NewMockController(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
-	cfg := &config.Config{}
+	cfg := &config.AppConfig{}
 
 	userHandler := NewUsersHandlers(cfg, mockController, mockLogger)
 
@@ -62,7 +62,7 @@ func TestUsersHandlers_Login(t *testing.T) {
 
 	mockController := mocks.NewMockController(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
-	cfg := &config.Config{}
+	cfg := &config.AppConfig{}
 
 	userHandler := NewUsersHandlers(cfg, mockController, mockLogger)
 
@@ -91,7 +91,7 @@ func TestUsersHandlers_VerifyLogin(t *testing.T) {
 
 	mockController := mocks.NewMockController(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
-	cfg := &config.Config{}
+	cfg := &config.AppConfig{}
 
 	userHandler := NewUsersHandlers(cfg, mockController, mockLogger)
 
@@ -120,7 +120,7 @@ func TestUsersHandlers_VerifyLoginWithRecoveryCode(t *testing.T) {
 
 	mockController := mocks.NewMockController(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
-	cfg := &config.Config{}
+	cfg := &config.AppConfig{}
 
 	userHandler := NewUsersHandlers(cfg, mockController, mockLogger)
 
@@ -150,7 +150,7 @@ func TestUsersHandlers_Begin2faSetup(t *testing.T) {
 
 	mockController := mocks.NewMockController(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
-	cfg := &config.Config{}
+	cfg := &config.AppConfig{}
 
 	userHandler := NewUsersHandlers(cfg, mockController, mockLogger)
 
@@ -184,7 +184,7 @@ func TestUsersHandlers_Complete2faSetup(t *testing.T) {
 
 	mockController := mocks.NewMockController(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
-	cfg := &config.Config{}
+	cfg := &config.AppConfig{}
 
 	user := &models.User{
 		Username: "username",
@@ -225,7 +225,7 @@ func TestUsersHandlers_Disable2fa(t *testing.T) {
 
 	mockController := mocks.NewMockController(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
-	cfg := &config.Config{}
+	cfg := &config.AppConfig{}
 
 	user := &models.User{
 		Username: "username",
@@ -264,7 +264,7 @@ func TestUsersHandlers_ChangePassword(t *testing.T) {
 
 	mockController := mocks.NewMockController(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
-	cfg := &config.Config{}
+	cfg := &config.AppConfig{}
 
 	userHandler := NewUsersHandlers(cfg, mockController, mockLogger)
 
@@ -304,7 +304,7 @@ func TestUsersHandlers_RegenerateRecoveryCodes(t *testing.T) {
 
 	mockController := mocks.NewMockController(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
-	cfg := &config.Config{}
+	cfg := &config.AppConfig{}
 
 	userHandler := NewUsersHandlers(cfg, mockController, mockLogger)
 

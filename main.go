@@ -14,10 +14,8 @@ import (
 
 func main() {
 	ctx := context.Background()
-	conf, err := config.InitConfig()
-	if err != nil {
-		log.Fatalf("Failed to initialize config: %v", err)
-	}
+	conf := config.NewAppConfig()
+	conf.Load()
 
 	logger := logger.NewLogger()
 
