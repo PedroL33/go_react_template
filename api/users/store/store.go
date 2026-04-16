@@ -13,19 +13,22 @@ import (
 	"github.com/pkg/errors"
 )
 
+// userStore runs queries against whichever Querier it is bound to.
+// Immutable — WithQuerier returns a new view rather than mutating.
 type userStore struct {
-	db db.DbConn
+	q db.Querier
 }
 
-func NewUsersStore(db db.DbConn) users.Store {
-	return &userStore{
-		db: db,
-	}
+func NewUsersStore(q db.Querier) users.Store {
+	return &userStore{q: q}
 }
 
-func (s *userStore) CreateUser(ctx context.Context, user *models.User, tx db.DbConn) (*models.User, error) {
-	db := db.GetDb(s.db, tx)
-	row := db.QueryRow(
+func (s *userStore) WithQuerier(q db.Querier) users.Store {
+	return &userStore{q: q}
+}
+
+func (s *userStore) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
+	row := s.q.QueryRow(
 		ctx,
 		"INSERT INTO users (username, password) VALUES ($1, $2) RETURNING *",
 		user.Username,
@@ -33,7 +36,6 @@ func (s *userStore) CreateUser(ctx context.Context, user *models.User, tx db.DbC
 	)
 
 	createdUser := &models.User{}
-
 	if err := util.ScanRowIntoStruct(row, createdUser); err != nil {
 		return nil, errors.Wrap(err, "userStore.CreateUser")
 	}
@@ -41,9 +43,8 @@ func (s *userStore) CreateUser(ctx context.Context, user *models.User, tx db.DbC
 	return createdUser, nil
 }
 
-func (s *userStore) GetUserByUsername(ctx context.Context, username string, tx db.DbConn) (*models.User, error) {
-	db := db.GetDb(s.db, tx)
-	row := db.QueryRow(ctx, "SELECT * FROM users WHERE username = $1", username)
+func (s *userStore) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
+	row := s.q.QueryRow(ctx, "SELECT * FROM users WHERE username = $1", username)
 	foundUser := &models.User{}
 	if err := util.ScanRowIntoStruct(row, foundUser); err != nil {
 		return nil, errors.Wrap(err, "userStore.GetUserByUsername")
@@ -52,10 +53,8 @@ func (s *userStore) GetUserByUsername(ctx context.Context, username string, tx d
 	return foundUser, nil
 }
 
-func (s *userStore) GetUserById(ctx context.Context, userId int, tx db.DbConn) (*models.User, error) {
-	db := db.GetDb(s.db, tx)
-
-	row := db.QueryRow(ctx, "SELECT * FROM users WHERE id = $1", userId)
+func (s *userStore) GetUserById(ctx context.Context, userId int) (*models.User, error) {
+	row := s.q.QueryRow(ctx, "SELECT * FROM users WHERE id = $1", userId)
 
 	foundUser := &models.User{}
 	if err := util.ScanRowIntoStruct(row, foundUser); err != nil {
@@ -65,10 +64,8 @@ func (s *userStore) GetUserById(ctx context.Context, userId int, tx db.DbConn) (
 	return foundUser, nil
 }
 
-func (s *userStore) Create2faSetupSession(ctx context.Context, session *models.TwoFactorSetupSession, tx db.DbConn) (*models.TwoFactorSetupSession, error) {
-	db := db.GetDb(s.db, tx)
-
-	row := db.QueryRow(
+func (s *userStore) Create2faSetupSession(ctx context.Context, session *models.TwoFactorSetupSession) (*models.TwoFactorSetupSession, error) {
+	row := s.q.QueryRow(
 		ctx,
 		"INSERT INTO two_factor_setup_sessions (user_id, secret_string, expiration_timestamp) VALUES ($1, $2, $3) RETURNING *",
 		session.UserId,
@@ -84,10 +81,8 @@ func (s *userStore) Create2faSetupSession(ctx context.Context, session *models.T
 	return createdSession, nil
 }
 
-func (s *userStore) Get2faSetupSessionByUserId(ctx context.Context, userId int, tx db.DbConn) (*models.TwoFactorSetupSession, error) {
-	db := db.GetDb(s.db, tx)
-
-	row := db.QueryRow(ctx, "SELECT * FROM two_factor_setup_sessions WHERE user_id = $1", userId)
+func (s *userStore) Get2faSetupSessionByUserId(ctx context.Context, userId int) (*models.TwoFactorSetupSession, error) {
+	row := s.q.QueryRow(ctx, "SELECT * FROM two_factor_setup_sessions WHERE user_id = $1", userId)
 
 	setupSession := &models.TwoFactorSetupSession{}
 	if err := util.ScanRowIntoStruct(row, setupSession); err != nil {
@@ -97,9 +92,8 @@ func (s *userStore) Get2faSetupSessionByUserId(ctx context.Context, userId int, 
 	return setupSession, nil
 }
 
-func (s *userStore) EnableTwoFactorAuth(ctx context.Context, setupSession *models.TwoFactorSetupSession, tx db.DbConn) error {
-	db := db.GetDb(s.db, tx)
-	if _, err := db.Exec(
+func (s *userStore) EnableTwoFactorAuth(ctx context.Context, setupSession *models.TwoFactorSetupSession) error {
+	if _, err := s.q.Exec(
 		ctx,
 		"UPDATE users SET two_factor_secret = $1, is_two_factor_enabled = $2 WHERE id=$3",
 		setupSession.SecretString,
@@ -112,9 +106,8 @@ func (s *userStore) EnableTwoFactorAuth(ctx context.Context, setupSession *model
 	return nil
 }
 
-func (s *userStore) DisableTwoFactorAuth(ctx context.Context, userId int, tx db.DbConn) error {
-	db := db.GetDb(s.db, tx)
-	if _, err := db.Exec(
+func (s *userStore) DisableTwoFactorAuth(ctx context.Context, userId int) error {
+	if _, err := s.q.Exec(
 		ctx,
 		"UPDATE users SET two_factor_secret = $1, is_two_factor_enabled = $2 WHERE id=$3",
 		nil,
@@ -127,10 +120,8 @@ func (s *userStore) DisableTwoFactorAuth(ctx context.Context, userId int, tx db.
 	return nil
 }
 
-func (s *userStore) Delete2faSetupSession(ctx context.Context, userId int, tx db.DbConn) error {
-	db := db.GetDb(s.db, tx)
-
-	if _, err := db.Exec(
+func (s *userStore) Delete2faSetupSession(ctx context.Context, userId int) error {
+	if _, err := s.q.Exec(
 		ctx,
 		"DELETE FROM two_factor_setup_sessions WHERE user_id = $1",
 		userId,
@@ -141,18 +132,15 @@ func (s *userStore) Delete2faSetupSession(ctx context.Context, userId int, tx db
 	return nil
 }
 
-func (s *userStore) GenerateRecoveryCode(ctx context.Context, userId int, tx db.DbConn) (*models.RecoveryCode, error) {
-	db := db.GetDb(s.db, tx)
-
+func (s *userStore) GenerateRecoveryCode(ctx context.Context, userId int) (*models.RecoveryCode, error) {
 	bytes := make([]byte, 8)
-	_, err := rand.Read(bytes)
-	if err != nil {
+	if _, err := rand.Read(bytes); err != nil {
 		return nil, errors.Wrap(err, "userStore.GenerateRecoveryCode")
 	}
 
 	code := base64.URLEncoding.EncodeToString(bytes)[:8]
 
-	row := db.QueryRow(ctx, "INSERT INTO recovery_codes (user_id, code) VALUES ($1, $2) RETURNING *", userId, code)
+	row := s.q.QueryRow(ctx, "INSERT INTO recovery_codes (user_id, code) VALUES ($1, $2) RETURNING *", userId, code)
 
 	recoveryCode := &models.RecoveryCode{}
 	if err := util.ScanRowIntoStruct(row, recoveryCode); err != nil {
@@ -162,10 +150,8 @@ func (s *userStore) GenerateRecoveryCode(ctx context.Context, userId int, tx db.
 	return recoveryCode, nil
 }
 
-func (s *userStore) DeleteRecoveryCodes(ctx context.Context, userId int, tx db.DbConn) error {
-	db := db.GetDb(s.db, tx)
-
-	if _, err := db.Exec(
+func (s *userStore) DeleteRecoveryCodes(ctx context.Context, userId int) error {
+	if _, err := s.q.Exec(
 		ctx,
 		"DELETE FROM recovery_codes WHERE user_id = $1",
 		userId,
@@ -176,10 +162,8 @@ func (s *userStore) DeleteRecoveryCodes(ctx context.Context, userId int, tx db.D
 	return nil
 }
 
-func (s *userStore) GetRecoveryCodesByUserId(ctx context.Context, userId int, tx db.DbConn) ([]*models.RecoveryCode, error) {
-	db := db.GetDb(s.db, tx)
-
-	rows, err := db.Query(ctx, "SELECT * FROM recovery_codes WHERE user_id = $1", userId)
+func (s *userStore) GetRecoveryCodesByUserId(ctx context.Context, userId int) ([]*models.RecoveryCode, error) {
+	rows, err := s.q.Query(ctx, "SELECT * FROM recovery_codes WHERE user_id = $1", userId)
 	if err != nil {
 		return nil, errors.Wrap(err, "userStore.GetRecoveryCodesByUserId")
 	}
@@ -197,20 +181,16 @@ func (s *userStore) GetRecoveryCodesByUserId(ctx context.Context, userId int, tx
 	return codes, nil
 }
 
-func (s *userStore) RedeemRecoveryCode(ctx context.Context, id int, tx db.DbConn) error {
-	db := db.GetDb(s.db, tx)
-
-	if _, err := db.Exec(ctx, "UPDATE recovery_codes SET is_redeemed = $1 WHERE id=$2", true, id); err != nil {
+func (s *userStore) RedeemRecoveryCode(ctx context.Context, id int) error {
+	if _, err := s.q.Exec(ctx, "UPDATE recovery_codes SET is_redeemed = $1 WHERE id=$2", true, id); err != nil {
 		return errors.Wrap(err, "userStore.RedeemRecoveryCode")
 	}
 
 	return nil
 }
 
-func (s *userStore) CreateLoginSession(ctx context.Context, userId int, tx db.DbConn) (int, error) {
-	db := db.GetDb(s.db, tx)
-
-	row := db.QueryRow(ctx, "INSERT INTO login_sessions (user_id, expiration_timestamp) VALUES ($1, $2) RETURNING id", userId, time.Now().Add(1*time.Minute))
+func (s *userStore) CreateLoginSession(ctx context.Context, userId int) (int, error) {
+	row := s.q.QueryRow(ctx, "INSERT INTO login_sessions (user_id, expiration_timestamp) VALUES ($1, $2) RETURNING id", userId, time.Now().Add(1*time.Minute))
 
 	var loginSessionId int
 	if err := row.Scan(&loginSessionId); err != nil {
@@ -220,10 +200,8 @@ func (s *userStore) CreateLoginSession(ctx context.Context, userId int, tx db.Db
 	return loginSessionId, nil
 }
 
-func (s *userStore) GetLoginSessionById(ctx context.Context, loginSessionId int, tx db.DbConn) (*models.LoginSession, error) {
-	db := db.GetDb(s.db, tx)
-
-	row := db.QueryRow(ctx, "SELECT * FROM login_sessions WHERE id= $1", loginSessionId)
+func (s *userStore) GetLoginSessionById(ctx context.Context, loginSessionId int) (*models.LoginSession, error) {
+	row := s.q.QueryRow(ctx, "SELECT * FROM login_sessions WHERE id= $1", loginSessionId)
 
 	loginSession := &models.LoginSession{}
 	if err := util.ScanRowIntoStruct(row, loginSession); err != nil {
@@ -233,20 +211,16 @@ func (s *userStore) GetLoginSessionById(ctx context.Context, loginSessionId int,
 	return loginSession, nil
 }
 
-func (s *userStore) DeleteLoginSessionByUserId(ctx context.Context, userId int, tx db.DbConn) error {
-	db := db.GetDb(s.db, tx)
-
-	if _, err := db.Exec(ctx, "DELETE FROM login_sessions WHERE user_id= $1", userId); err != nil {
+func (s *userStore) DeleteLoginSessionByUserId(ctx context.Context, userId int) error {
+	if _, err := s.q.Exec(ctx, "DELETE FROM login_sessions WHERE user_id= $1", userId); err != nil {
 		return errors.Wrap(err, "userStore.DeleteLoginSessionByUserId")
 	}
 
 	return nil
 }
 
-func (s *userStore) UpdatePassword(ctx context.Context, password string, userId int, tx db.DbConn) error {
-	db := db.GetDb(s.db, tx)
-
-	if _, err := db.Exec(ctx, "UPDATE users SET password = $1 WHERE id = $2", password, userId); err != nil {
+func (s *userStore) UpdatePassword(ctx context.Context, password string, userId int) error {
+	if _, err := s.q.Exec(ctx, "UPDATE users SET password = $1 WHERE id = $2", password, userId); err != nil {
 		return errors.Wrap(err, "userStore.UpdatePassword")
 	}
 

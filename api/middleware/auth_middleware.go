@@ -40,7 +40,7 @@ func (m *middleWareManager) Auth(next http.HandlerFunc) http.HandlerFunc {
 
 		var currentUser *models.User
 		if username, ok := payload["Username"].(string); ok {
-			if currentUser, err = m.userStore.GetUserByUsername(r.Context(), username, nil); err != nil {
+			if currentUser, err = m.userStore.GetUserByUsername(r.Context(), username); err != nil {
 				m.logger.HttpError(r, httpcomm.NewInternalServerError(err, "Invalid token payload."))
 				httpcomm.SendErrorResponse(w, httpcomm.NewInternalServerError(err, "Invalid credentials."))
 				return

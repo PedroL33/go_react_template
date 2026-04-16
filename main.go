@@ -19,24 +19,20 @@ func main() {
 
 	logger := logger.NewLogger()
 
-	dbConn, err := db.NewDbConn(ctx, conf.DatabaseUrl)
+	pool, err := db.NewPool(ctx, conf.DatabaseUrl)
 
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	defer func() {
-		if err := dbConn.Close(ctx); err != nil {
-			logger.Error(err)
-		}
-	}()
-	logger.Info("Database connection established.")
+	defer pool.Close()
+	logger.Info("Database connection pool established.")
 
-	db.Migrate(conf, dbConn, logger)
+	db.Migrate(conf, logger)
 	logger.Info("Migrations performed and up to date.")
 
-	db.Seed(conf, dbConn, logger)
+	db.Seed(conf, pool, logger)
 	logger.Info("Database seed process complete.")
 
-	srv := server.NewServer(logger, conf, dbConn)
+	srv := server.NewServer(logger, conf, pool)
 	srv.Run()
 }
