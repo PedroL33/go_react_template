@@ -30,16 +30,13 @@ type ErrorResponse struct {
 }
 
 func SendErrorResponse(w http.ResponseWriter, err error) {
-
 	var httpError *HttpError
-
-	if errors.As(err, &httpError) {
-		errorResponse := &ErrorResponse{
-			Status:  httpError.Status(),
-			Message: httpError.Message(),
-			Error:   httpError.Reasons(),
-		}
-
-		util.Encode(w, httpError.Status(), errorResponse)
+	if !errors.As(err, &httpError) {
+		httpError = NewInternalServerError(err, "Internal server error.")
 	}
+	util.Encode(w, httpError.Status, ErrorResponse{
+		Status:  httpError.Status,
+		Message: httpError.Message,
+		Error:   httpError.Reasons,
+	})
 }

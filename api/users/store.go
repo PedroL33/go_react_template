@@ -6,6 +6,8 @@ import (
 	"example/dashboard/api/models"
 )
 
+//go:generate mockgen -source=store.go -destination=./mocks/mock_store.go -package=mocks
+
 // Store runs user-related queries against whatever Querier it is bound to
 // (the pool, a pinned connection, or a transaction). Callers rebind the store
 // with WithQuerier when they need tx/conn-scoped execution.

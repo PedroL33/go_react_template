@@ -11,11 +11,12 @@ import {
   ILoginWithRecoveryCodeRequest, 
   IRegenerateRecoveryCodesResponse 
 } from "types";
+import { SERVER_URL } from "utils/Environment";
 import { parseApiError } from "utils/Error";
 
 export const Login = async (loginRequest: ILoginRequest): Promise<ILoginResponse> => {
   try {
-    const response = await axios.post("http://localhost:8080/login", loginRequest, {
+    const response = await axios.post(`${SERVER_URL}/login`, loginRequest, {
       headers: {
         "Content-Type": "application/json",
       },
@@ -28,7 +29,7 @@ export const Login = async (loginRequest: ILoginRequest): Promise<ILoginResponse
 
 export const LoginWithOptCode = async (verifyLoginRequest: ILoginWithOtpCodeRequest): Promise<ILoginResponse> => {
   try {
-    const response = await axios.post("http://localhost:8080/login_otp", verifyLoginRequest, {
+    const response = await axios.post(`${SERVER_URL}/login_otp`, verifyLoginRequest, {
       headers: {
         "Content-Type": "application/json",
       },
@@ -42,7 +43,7 @@ export const LoginWithOptCode = async (verifyLoginRequest: ILoginWithOtpCodeRequ
 
 export const LoginWithRecoveryCode = async (verifyLoginRequest: ILoginWithRecoveryCodeRequest): Promise<ILoginResponse> => {
   try {
-    const response = await axios.post("http://localhost:8080/login_recovery_code", verifyLoginRequest, {
+    const response = await axios.post(`${SERVER_URL}/login_recovery_code`, verifyLoginRequest, {
       headers: {
         "Content-Type": "application/json",
       },
@@ -56,11 +57,11 @@ export const LoginWithRecoveryCode = async (verifyLoginRequest: ILoginWithRecove
 
 export const EnableTwoFactorAuth = async (authToken: string): Promise<IBegin2faResponse> => {
   try {
-    const response = await axios.post("http://localhost:8080/begin2fa", undefined, {
+    const response = await axios.post(`${SERVER_URL}/begin2fa`, undefined, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer: ${authToken}`
+        "Authorization": `Bearer ${authToken}`
       },
     })
 
@@ -72,11 +73,11 @@ export const EnableTwoFactorAuth = async (authToken: string): Promise<IBegin2faR
 
 export const CompleteTwoFactorAuth = async (authToken: string, complete2faSetupRequest: IComplete2faRequest): Promise<IComplete2faResponse> => {
   try {
-    const response = await axios.post("http://localhost:8080/complete2fa", complete2faSetupRequest, {
+    const response = await axios.post(`${SERVER_URL}complete2fa`, complete2faSetupRequest, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer: ${authToken}`
+        "Authorization": `Bearer ${authToken}`
       },
     })
     
@@ -88,12 +89,11 @@ export const CompleteTwoFactorAuth = async (authToken: string, complete2faSetupR
 
 export const DisableTwoFactorAuth = async (authToken: string, disable2faRequest: IDisable2faRequest): Promise<string> => {
   try {
-    console.log(disable2faRequest)
-    const response = await axios.post("http://localhost:8080/disable2fa", disable2faRequest, {
+    const response = await axios.post(`${SERVER_URL}/disable2fa`, disable2faRequest, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer: ${authToken}`
+        "Authorization": `Bearer ${authToken}`
       },
     })
 
@@ -105,11 +105,11 @@ export const DisableTwoFactorAuth = async (authToken: string, disable2faRequest:
 
 export const ChangePassword = async (authToken: string, changePasswordRequest: IChangePasswordRequest): Promise<string> => {
   try {
-    const response = await axios.put("http://localhost:8080/change_password", changePasswordRequest, {
+    const response = await axios.put(`${SERVER_URL}/change_password`, changePasswordRequest, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer: ${authToken}`
+        "Authorization": `Bearer ${authToken}`
       },
     })
 
@@ -121,11 +121,11 @@ export const ChangePassword = async (authToken: string, changePasswordRequest: I
 
 export const RegenerateRecoveryCodes = async (authToken: string): Promise<IRegenerateRecoveryCodesResponse> => {
   try {
-    const response = await axios.post("http://localhost:8080/regenerate_recovery_codes", undefined, {
+    const response = await axios.post(`${SERVER_URL}/regenerate_recovery_codes`, undefined, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer: ${authToken}`
+        "Authorization": `Bearer ${authToken}`
       },
     })
 

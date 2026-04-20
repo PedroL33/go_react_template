@@ -7,6 +7,8 @@ import (
 	"net/http"
 )
 
+//go:generate mockgen -source=manager.go -destination=../users/mocks/mock_middleware_manager.go -package=mocks
+
 type Middleware func(http.HandlerFunc) http.HandlerFunc
 
 type MiddleWareManager interface {

@@ -24,7 +24,7 @@ func (m *middleWareManager) Auth(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		token := strings.TrimPrefix(authHeader, "Bearer: ")
+		token := strings.TrimPrefix(authHeader, "Bearer ")
 		if token == "" {
 			m.logger.HttpError(r, httpcomm.NewInternalServerError(err, "Missing token."))
 			httpcomm.SendErrorResponse(w, httpcomm.NewInternalServerError(err, "Invalid credentials."))

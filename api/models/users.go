@@ -9,13 +9,13 @@ import (
 )
 
 type User struct {
-	Id                 int            `json:"id" validate:"omitempty"`
-	Username           string         `json:"username" validate:"required,lte=60"`
-	Password           string         `json:"password" validate:"required,lte=30,gte=8"`
-	TwoFactorSecret    sql.NullString `json:"twoFactorSecret" validate:"omitempty"`
-	IsTwoFactorEnabled sql.NullBool   `json:"isTwoFactorEnabled" validate:"omitempty"`
-	CreatedAt          time.Time      `json:"createdAt"`
-	UpdatedAt          time.Time      `json:"updatedAt"`
+	Id                 int            `json:"id" validate:"omitempty" db:"id"`
+	Username           string         `json:"username" validate:"required,lte=60" db:"username"`
+	Password           string         `json:"password" validate:"required,lte=30,gte=8" db:"password"`
+	TwoFactorSecret    sql.NullString `json:"twoFactorSecret" validate:"omitempty" db:"two_factor_secret"`
+	IsTwoFactorEnabled sql.NullBool   `json:"isTwoFactorEnabled" validate:"omitempty" db:"is_two_factor_enabled"`
+	CreatedAt          time.Time      `json:"createdAt" db:"created_at"`
+	UpdatedAt          time.Time      `json:"updatedAt" db:"updated_at"`
 }
 
 type UserWithToken struct {

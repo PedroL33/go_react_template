@@ -6,15 +6,14 @@ import (
 	"image/png"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/pquerna/otp/totp"
 )
 
 type TwoFactorSetupSession struct {
-	UserId       int       `json:"userId"`
-	SecretString string    `json:"secretString" validate:"required"`
-	CreatedAt    time.Time `json:"createdAt" validate:"omitempty"`
-	Expiration   time.Time `json:"expiration"`
+	UserId       int       `json:"userId" db:"user_id"`
+	SecretString string    `json:"secretString" validate:"required" db:"secret_string"`
+	CreatedAt    time.Time `json:"createdAt" validate:"omitempty" db:"created_timestamp"`
+	Expiration   time.Time `json:"expiration" db:"expiration_timestamp"`
 }
 
 func (tf *TwoFactorSetupSession) PopulateSecretStringAndReturnBase64QrCode(accountName string) (string, error) {
@@ -24,13 +23,13 @@ func (tf *TwoFactorSetupSession) PopulateSecretStringAndReturnBase64QrCode(accou
 	})
 
 	if err != nil {
-		return "", errors.Wrap(err, "TwoFactoSetupSession.GenerateBase64QrCode")
+		return "", err
 	}
 
 	var buf bytes.Buffer
 	img, err := key.Image(200, 200)
 	if err != nil {
-		return "", errors.Wrap(err, "TwoFactoSetupSession.GenerateBase64QrCode")
+		return "", err
 	}
 
 	png.Encode(&buf, img)

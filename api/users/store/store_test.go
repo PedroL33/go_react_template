@@ -268,7 +268,7 @@ func TestUsersStore_WithQuerier_ReturnsIndependentView(t *testing.T) {
 	txStore := baseStore.WithQuerier(txMock)
 
 	// The re-bound store should hit the tx, not the pool.
-	txMock.EXPECT().QueryRow(context.TODO(), gomock.Any(), gomock.Any()).Return(row)
+	txMock.EXPECT().QueryRow(context.TODO(), gomock.Any(), gomock.Any()).Return(row, nil)
 	row.EXPECT().Scan(gomock.Any()).Return(nil)
 
 	user, err := txStore.GetUserByUsername(context.TODO(), "foo")

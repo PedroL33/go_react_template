@@ -6,6 +6,8 @@ import (
 	"example/dashboard/api/users/payloads"
 )
 
+//go:generate mockgen -source=controller.go -destination=./mocks/mock_controller.go -package=mocks
+
 type Controller interface {
 	CreateUser(ctx context.Context, user *payloads.CreateUserRequest) (*models.UserWithToken, error)
 	Login(ctx context.Context, user *models.User) (*payloads.LoginResponse, error)

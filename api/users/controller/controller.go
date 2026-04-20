@@ -10,7 +10,6 @@ import (
 	"example/dashboard/config"
 	"example/dashboard/logger"
 	"example/dashboard/util"
-	"net/http"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -32,18 +31,11 @@ func NewUsersController(cfg *config.AppConfig, usersStore users.Store, txnManage
 func (uc *usersController) CreateUser(ctx context.Context, request *payloads.CreateUserRequest) (*models.UserWithToken, error) {
 	existingUser, err := uc.usersStore.GetUserByUsername(ctx, request.Username)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return nil, httpcomm.NewInternalServerError(
-			errors.Wrap(err, "UsersController.CreateUser"),
-			"Internal sever error.",
-		)
+		return nil, httpcomm.NewInternalServerError(util.Wrap(err), "Internal sever error.")
 	}
 
 	if existingUser != nil {
-		return nil, httpcomm.NewHttpError(
-			http.StatusBadRequest,
-			"Username already exists.",
-			errors.Wrap(err, "UsersController.CreateUser"),
-		)
+		return nil, httpcomm.NewBadRequestError(util.Wrap(err), "Username already exists.")
 	}
 
 	user := &models.User{
@@ -59,18 +51,12 @@ func (uc *usersController) CreateUser(ctx context.Context, request *payloads.Cre
 		return txErr
 	})
 	if err != nil {
-		return nil, httpcomm.NewBadRequestError(
-			errors.Wrap(err, "UsersController.CreateUser"),
-			"User creation failed.",
-		)
+		return nil, httpcomm.NewBadRequestError(util.Wrap(err), "User creation failed.")
 	}
 
 	token, err := util.CreateToken(uc.cfg, createdUser)
 	if err != nil {
-		return nil, httpcomm.NewInternalServerError(
-			errors.Wrap(err, "UsersController.CreateUser"),
-			"Internal server error. Failed to generate token.",
-		)
+		return nil, httpcomm.NewInternalServerError(util.Wrap(err), "Internal server error. Failed to generate token.")
 	}
 
 	createdUser.Sanitize()
@@ -84,32 +70,20 @@ func (uc *usersController) CreateUser(ctx context.Context, request *payloads.Cre
 func (uc *usersController) Login(ctx context.Context, user *models.User) (*payloads.LoginResponse, error) {
 	foundUser, err := uc.usersStore.GetUserByUsername(ctx, user.Username)
 	if err != nil {
-		return nil, httpcomm.NewForbiddenError(
-			errors.Wrap(err, "UsersController.Login"),
-			"Invalid credentials.",
-		)
+		return nil, httpcomm.NewForbiddenError(util.Wrap(err), "Invalid credentials.")
 	}
 
 	if err = foundUser.ComparePasswords(user.Password); err != nil {
-		return nil, httpcomm.NewForbiddenError(
-			errors.Wrap(err, "UsersController.Login"),
-			"Invalid credentials.",
-		)
+		return nil, httpcomm.NewForbiddenError(util.Wrap(err), "Invalid credentials.")
 	}
 
 	if foundUser.IsTwoFactorEnabled.Bool {
 		if err = uc.usersStore.DeleteLoginSessionByUserId(ctx, foundUser.Id); err != nil {
-			return nil, httpcomm.NewInternalServerError(
-				errors.Wrap(err, "UsersController.Login"),
-				"Two factor authentication error.",
-			)
+			return nil, httpcomm.NewInternalServerError(util.Wrap(err), "Two factor authentication error.")
 		}
 		loginSessionId, err := uc.usersStore.CreateLoginSession(ctx, foundUser.Id)
 		if err != nil {
-			return nil, httpcomm.NewInternalServerError(
-				errors.Wrap(err, "UsersController.Login"),
-				"Two factor authentication error.",
-			)
+			return nil, httpcomm.NewInternalServerError(util.Wrap(err), "Two factor authentication error.")
 		}
 
 		return &payloads.LoginResponse{
@@ -120,10 +94,7 @@ func (uc *usersController) Login(ctx context.Context, user *models.User) (*paylo
 	foundUser.Sanitize()
 	token, err := util.CreateToken(uc.cfg, foundUser)
 	if err != nil {
-		return nil, httpcomm.NewInternalServerError(
-			errors.Wrap(err, "UsersController.Login"),
-			"Error while creating token.",
-		)
+		return nil, httpcomm.NewInternalServerError(util.Wrap(err), "Error while creating token.")
 	}
 
 	return &payloads.LoginResponse{
@@ -135,32 +106,26 @@ func (uc *usersController) Login(ctx context.Context, user *models.User) (*paylo
 func (uc *usersController) VerifyLogin(ctx context.Context, verifyLoginRequest *payloads.LoginWithOptCodeRequest) (*payloads.LoginResponse, error) {
 	loginSession, err := uc.usersStore.GetLoginSessionById(ctx, verifyLoginRequest.LoginSessionId)
 	if err != nil {
-		return nil, httpcomm.NewBadRequestError(errors.Wrap(err, "UsersController.VerifyLogin"), "Unable to locate login session.")
+		return nil, httpcomm.NewBadRequestError(util.Wrap(err), "Unable to locate login session.")
 	}
 
 	if loginSession.Expiration.Before(time.Now()) {
-		return nil, httpcomm.NewExpiredSessionError(errors.Wrap(err, "UsersController.VerifyLogin"), "Expired session.")
+		return nil, httpcomm.NewUnauthorizedError(util.Wrap(err), "Expired session.")
 	}
 
 	currentUser, err := uc.usersStore.GetUserById(ctx, loginSession.UserId)
 	if err != nil {
-		return nil, httpcomm.NewInternalServerError(errors.Wrap(err, "UsersController.VerifyLogin"), "Something went wrong.")
+		return nil, httpcomm.NewInternalServerError(util.Wrap(err), "Something went wrong.")
 	}
 
 	if !totp.Validate(verifyLoginRequest.OtpCode, currentUser.TwoFactorSecret.String) {
-		return nil, httpcomm.NewBadRequestError(
-			errors.Wrap(err, "UsersController.VerifyLogin"),
-			"Code not valid.",
-		)
+		return nil, httpcomm.NewBadRequestError(util.Wrap(err), "Code not valid.")
 	}
 
 	currentUser.Sanitize()
 	token, err := util.CreateToken(uc.cfg, currentUser)
 	if err != nil {
-		return nil, httpcomm.NewInternalServerError(
-			errors.Wrap(err, "UsersController.VerifyLogin"),
-			"Error while creating token.",
-		)
+		return nil, httpcomm.NewInternalServerError(util.Wrap(err), "Error while creating token.")
 	}
 
 	return &payloads.LoginResponse{
@@ -172,21 +137,21 @@ func (uc *usersController) VerifyLogin(ctx context.Context, verifyLoginRequest *
 func (uc *usersController) VerifyLoginWithRecoveryCode(ctx context.Context, verifyLoginRequest *payloads.LoginWithRecoveryCodeRequest) (*payloads.LoginResponse, error) {
 	loginSession, err := uc.usersStore.GetLoginSessionById(ctx, verifyLoginRequest.LoginSessionId)
 	if err != nil {
-		return nil, httpcomm.NewBadRequestError(errors.Wrap(err, "UsersController.VerifyLoginWithRecoveryCode"), "Unable to locate login session.")
+		return nil, httpcomm.NewBadRequestError(util.Wrap(err), "Unable to locate login session.")
 	}
 
 	if loginSession.Expiration.Before(time.Now()) {
-		return nil, httpcomm.NewExpiredSessionError(errors.Wrap(err, "UsersController.VerifyLoginWithRecoveryCode"), "Expired session.")
+		return nil, httpcomm.NewUnauthorizedError(util.Wrap(err), "Expired session.")
 	}
 
 	currentUser, err := uc.usersStore.GetUserById(ctx, loginSession.UserId)
 	if err != nil {
-		return nil, httpcomm.NewInternalServerError(errors.Wrap(err, "UsersController.VerifyLoginWithRecoveryCode"), "Something went wrong.")
+		return nil, httpcomm.NewInternalServerError(util.Wrap(err), "Something went wrong.")
 	}
 
 	recoveryCodes, err := uc.usersStore.GetRecoveryCodesByUserId(ctx, currentUser.Id)
 	if err != nil {
-		return nil, httpcomm.NewInternalServerError(errors.Wrap(err, "UsersController.VerifyLoginWithRecoveryCode"), "Error while verifying recovery codes.")
+		return nil, httpcomm.NewInternalServerError(util.Wrap(err), "Error while verifying recovery codes.")
 	}
 
 	for i := 0; i < len(recoveryCodes); i++ {
@@ -194,15 +159,12 @@ func (uc *usersController) VerifyLoginWithRecoveryCode(ctx context.Context, veri
 			currentUser.Sanitize()
 
 			if err = uc.usersStore.RedeemRecoveryCode(ctx, recoveryCodes[i].Id); err != nil {
-				return nil, httpcomm.NewInternalServerError(errors.Wrap(err, "UsersController.VerifyLoginWithRecoveryCode"), "Error while redeeming recovery codes.")
+				return nil, httpcomm.NewInternalServerError(util.Wrap(err), "Error while redeeming recovery codes.")
 			}
 
 			token, err := util.CreateToken(uc.cfg, currentUser)
 			if err != nil {
-				return nil, httpcomm.NewInternalServerError(
-					errors.Wrap(err, "UsersController.VerifyLoginWithRecoveryCode"),
-					"Error while creating token.",
-				)
+				return nil, httpcomm.NewInternalServerError(util.Wrap(err), "Error while creating token.")
 			}
 
 			return &payloads.LoginResponse{
@@ -212,7 +174,7 @@ func (uc *usersController) VerifyLoginWithRecoveryCode(ctx context.Context, veri
 		}
 	}
 
-	return nil, httpcomm.NewInternalServerError(errors.Wrap(err, "UsersController.VerifyLoginWithRecoveryCode"), "Invalid recovery code.")
+	return nil, httpcomm.NewInternalServerError(util.Wrap(err), "Invalid recovery code.")
 }
 
 func (uc *usersController) Begin2faSetupSession(ctx context.Context, currentUser *models.User) (string, error) {
@@ -227,22 +189,24 @@ func (uc *usersController) Begin2faSetupSession(ctx context.Context, currentUser
 
 	qrCodeString, err := twoFactorSession.PopulateSecretStringAndReturnBase64QrCode(currentUser.Username)
 	if err != nil {
-		return "", httpcomm.NewInternalServerError(errors.Wrap(err, "UsersController.Begin2faSetupSession"), "Internal server error. Could not populate secret string.")
+		return "", httpcomm.NewInternalServerError(util.Wrap(err), "Internal server error. Could not populate secret string.")
 	}
 
 	err = uc.txnManager.WithTx(ctx, func(tx db.Querier) error {
 		store := uc.usersStore.WithQuerier(tx)
 
 		if err := store.Delete2faSetupSession(ctx, currentUser.Id); err != nil {
-			return errors.Wrap(err, "delete existing session")
+			// return httpcomm.NewInternalServerError(util.Wrap(err), "delete existing session")
+			return util.Wrap(err)
 		}
 		if _, err := store.Create2faSetupSession(ctx, twoFactorSession); err != nil {
-			return errors.Wrap(err, "create 2fa session")
+			// return httpcomm.NewInternalServerError(util.Wrap(err), "create 2fa session")
+			return util.Wrap(err)
 		}
 		return nil
 	})
 	if err != nil {
-		return "", httpcomm.NewInternalServerError(errors.Wrap(err, "UsersController.Begin2faSetupSession"), "Error while setting up two factor authentication.")
+		return "", httpcomm.NewInternalServerError(util.Wrap(err), "Error while setting up two factor authentication.")
 	}
 
 	return qrCodeString, nil
@@ -251,7 +215,7 @@ func (uc *usersController) Begin2faSetupSession(ctx context.Context, currentUser
 func (uc *usersController) Complete2faSetup(ctx context.Context, complete2faSetupRequest *payloads.Complete2faSetupRequest, currentUser *models.User) ([]*models.RecoveryCode, error) {
 	currentUserSetupSession, err := uc.usersStore.Get2faSetupSessionByUserId(ctx, currentUser.Id)
 	if err != nil {
-		return nil, httpcomm.NewInternalServerError(errors.Wrap(err, "UsersController.Complete2faSetup"), "Could not find related two facto setup session.")
+		return nil, httpcomm.NewInternalServerError(util.Wrap(err), "Could not find related two facto setup session.")
 	}
 
 	if !totp.Validate(complete2faSetupRequest.OtpCode, currentUserSetupSession.SecretString) {
@@ -263,25 +227,25 @@ func (uc *usersController) Complete2faSetup(ctx context.Context, complete2faSetu
 		store := uc.usersStore.WithQuerier(tx)
 
 		if err := store.EnableTwoFactorAuth(ctx, currentUserSetupSession); err != nil {
-			return errors.Wrap(err, "enable two factor auth")
+			return httpcomm.NewInternalServerError(util.Wrap(err), "Error while enabling two factor auth")
 		}
 
 		recoveryCodes = recoveryCodes[:0]
 		for i := 0; i < 10; i++ {
 			code, err := store.GenerateRecoveryCode(ctx, currentUserSetupSession.UserId)
 			if err != nil {
-				return errors.Wrap(err, "generate recovery code")
+				return httpcomm.NewInternalServerError(util.Wrap(err), "Error while generating recovery code")
 			}
 			recoveryCodes = append(recoveryCodes, code)
 		}
 
 		if err := store.Delete2faSetupSession(ctx, currentUser.Id); err != nil {
-			return errors.Wrap(err, "delete setup session")
+			return httpcomm.NewInternalServerError(util.Wrap(err), "Error while deleting setup session")
 		}
 		return nil
 	})
 	if err != nil {
-		return nil, httpcomm.NewInternalServerError(errors.Wrap(err, "UsersController.Complete2faSetup"), "Error while completing two factor authentication setup.")
+		return nil, httpcomm.NewInternalServerError(util.Wrap(err), "Error while completing two factor authentication setup.")
 	}
 
 	return recoveryCodes, nil
@@ -289,24 +253,21 @@ func (uc *usersController) Complete2faSetup(ctx context.Context, complete2faSetu
 
 func (uc *usersController) Disable2fa(ctx context.Context, currentUser *models.User, disable2faRequest *payloads.Disable2faRequest) error {
 	if err := currentUser.ComparePasswords(disable2faRequest.Password); err != nil {
-		return httpcomm.NewForbiddenError(
-			errors.Wrap(err, "UsersController.Disable2fa"),
-			"Invalid credentials.",
-		)
+		return httpcomm.NewForbiddenError(util.Wrap(err), "Invalid credentials.")
 	}
 
 	err := uc.txnManager.WithTx(ctx, func(tx db.Querier) error {
 		store := uc.usersStore.WithQuerier(tx)
 		if err := store.DisableTwoFactorAuth(ctx, currentUser.Id); err != nil {
-			return errors.Wrap(err, "disable two factor auth")
+			return httpcomm.NewInternalServerError(util.Wrap(err), "Error while disabling two factor auth")
 		}
 		if err := store.DeleteRecoveryCodes(ctx, currentUser.Id); err != nil {
-			return errors.Wrap(err, "delete recovery codes")
+			return httpcomm.NewInternalServerError(util.Wrap(err), "Error while deleting recovery codes")
 		}
 		return nil
 	})
 	if err != nil {
-		return httpcomm.NewInternalServerError(errors.Wrap(err, "UsersController.Disable2fa"), "Error while disabling two factor authentication.")
+		return httpcomm.NewInternalServerError(util.Wrap(err), "Error while disabling two factor authentication.")
 	}
 
 	return nil
@@ -314,22 +275,16 @@ func (uc *usersController) Disable2fa(ctx context.Context, currentUser *models.U
 
 func (uc *usersController) UpdatePassword(ctx context.Context, currentUser *models.User, updatePasswordRequest *payloads.UpdatePasswordRequest) error {
 	if err := currentUser.ComparePasswords(updatePasswordRequest.CurrentPassword); err != nil {
-		return httpcomm.NewForbiddenError(
-			errors.Wrap(err, "UsersController.UpdatePassword"),
-			"Invalid credentials.",
-		)
+		return httpcomm.NewForbiddenError(util.Wrap(err), "Invalid credentials.")
 	}
 
 	currentUser.Password = updatePasswordRequest.NewPassword
 	if err := currentUser.HashPassword(); err != nil {
-		return httpcomm.NewInternalServerError(
-			errors.Wrap(err, "UsersController.UpdatePassword"),
-			"Error while hashing password.",
-		)
+		return httpcomm.NewInternalServerError(util.Wrap(err), "Error while hashing password.")
 	}
 
 	if err := uc.usersStore.UpdatePassword(ctx, currentUser.Password, currentUser.Id); err != nil {
-		return httpcomm.NewInternalServerError(errors.Wrap(err, "UsersController.UpdatePassword"), "Error while updating password.")
+		return httpcomm.NewInternalServerError(util.Wrap(err), "Error while updating password.")
 	}
 
 	return nil
@@ -340,21 +295,21 @@ func (uc *usersController) RegenerateRecoveryCodes(ctx context.Context, currentU
 	err := uc.txnManager.WithTx(ctx, func(tx db.Querier) error {
 		store := uc.usersStore.WithQuerier(tx)
 		if err := store.DeleteRecoveryCodes(ctx, currentUser.Id); err != nil {
-			return errors.Wrap(err, "delete recovery codes")
+			return httpcomm.NewInternalServerError(util.Wrap(err), "Error while deleting recovery codes")
 		}
 
 		recoveryCodes = recoveryCodes[:0]
 		for i := 0; i < 10; i++ {
 			code, err := store.GenerateRecoveryCode(ctx, currentUser.Id)
 			if err != nil {
-				return errors.Wrap(err, "generate recovery code")
+				return httpcomm.NewInternalServerError(util.Wrap(err), "Error while generating recovery code")
 			}
 			recoveryCodes = append(recoveryCodes, code)
 		}
 		return nil
 	})
 	if err != nil {
-		return nil, httpcomm.NewInternalServerError(errors.Wrap(err, "UsersController.RegenerateRecoveryCodes"), "Error while regenerating recovery codes.")
+		return nil, httpcomm.NewInternalServerError(util.Wrap(err), "Error while regenerating recovery codes.")
 	}
 
 	return recoveryCodes, nil

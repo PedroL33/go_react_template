@@ -17,18 +17,19 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Server struct {
 	logger logger.Logger
 	conf   *config.AppConfig
-	pool   *db.Pool
+	pool   *pgxpool.Pool
 }
 
 func NewServer(
 	logger logger.Logger,
 	conf *config.AppConfig,
-	pool *db.Pool,
+	pool *pgxpool.Pool,
 ) *Server {
 	return &Server{logger: logger, conf: conf, pool: pool}
 }

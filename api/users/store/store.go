@@ -10,7 +10,7 @@ import (
 	"example/dashboard/util"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/jackc/pgx/v5"
 )
 
 // userStore runs queries against whichever Querier it is bound to.
@@ -28,44 +28,41 @@ func (s *userStore) WithQuerier(q db.Querier) users.Store {
 }
 
 func (s *userStore) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
-	row := s.q.QueryRow(
+	rows, err := s.q.Query(
 		ctx,
 		"INSERT INTO users (username, password) VALUES ($1, $2) RETURNING *",
 		user.Username,
 		user.Password,
 	)
 
-	createdUser := &models.User{}
-	if err := util.ScanRowIntoStruct(row, createdUser); err != nil {
-		return nil, errors.Wrap(err, "userStore.CreateUser")
+	if err != nil {
+		return nil, util.Wrap(err)
 	}
 
-	return createdUser, nil
+	return pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByNameLax[models.User])
 }
 
 func (s *userStore) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
-	row := s.q.QueryRow(ctx, "SELECT * FROM users WHERE username = $1", username)
-	foundUser := &models.User{}
-	if err := util.ScanRowIntoStruct(row, foundUser); err != nil {
-		return nil, errors.Wrap(err, "userStore.GetUserByUsername")
+	rows, err := s.q.Query(ctx, "SELECT * FROM users WHERE username = $1", username)
+	if err != nil {
+		return nil, util.Wrap(err)
 	}
 
-	return foundUser, nil
+	return pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByNameLax[models.User])
 }
 
 func (s *userStore) GetUserById(ctx context.Context, userId int) (*models.User, error) {
-	row := s.q.QueryRow(ctx, "SELECT * FROM users WHERE id = $1", userId)
+	rows, err := s.q.Query(ctx, "SELECT * FROM users WHERE id = $1", userId)
 
-	foundUser := &models.User{}
-	if err := util.ScanRowIntoStruct(row, foundUser); err != nil {
-		return nil, errors.Wrap(err, "userStore.GetUserById")
+	if err != nil {
+		return nil, util.Wrap(err)
 	}
 
-	return foundUser, nil
+	return pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByNameLax[models.User])
 }
 
 func (s *userStore) Create2faSetupSession(ctx context.Context, session *models.TwoFactorSetupSession) (*models.TwoFactorSetupSession, error) {
-	row := s.q.QueryRow(
+	rows, err := s.q.Query(
 		ctx,
 		"INSERT INTO two_factor_setup_sessions (user_id, secret_string, expiration_timestamp) VALUES ($1, $2, $3) RETURNING *",
 		session.UserId,
@@ -73,23 +70,27 @@ func (s *userStore) Create2faSetupSession(ctx context.Context, session *models.T
 		session.Expiration,
 	)
 
-	createdSession := &models.TwoFactorSetupSession{}
-	if err := util.ScanRowIntoStruct(row, createdSession); err != nil {
-		return nil, errors.Wrap(err, "userStore.Create2faSetupSession")
+	if err != nil {
+		return nil, util.Wrap(err)
 	}
 
-	return createdSession, nil
+	session, err = pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByNameLax[models.TwoFactorSetupSession])
+
+	if err != nil {
+		return nil, util.Wrap(err)
+	}
+
+	return session, nil
 }
 
 func (s *userStore) Get2faSetupSessionByUserId(ctx context.Context, userId int) (*models.TwoFactorSetupSession, error) {
-	row := s.q.QueryRow(ctx, "SELECT * FROM two_factor_setup_sessions WHERE user_id = $1", userId)
+	rows, err := s.q.Query(ctx, "SELECT * FROM two_factor_setup_sessions WHERE user_id = $1", userId)
 
-	setupSession := &models.TwoFactorSetupSession{}
-	if err := util.ScanRowIntoStruct(row, setupSession); err != nil {
-		return nil, errors.Wrap(err, "userStore.Get2faSetupSessionByUserId")
+	if err != nil {
+		return nil, util.Wrap(err)
 	}
 
-	return setupSession, nil
+	return pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByNameLax[models.TwoFactorSetupSession])
 }
 
 func (s *userStore) EnableTwoFactorAuth(ctx context.Context, setupSession *models.TwoFactorSetupSession) error {
@@ -100,7 +101,7 @@ func (s *userStore) EnableTwoFactorAuth(ctx context.Context, setupSession *model
 		true,
 		setupSession.UserId,
 	); err != nil {
-		return errors.Wrap(err, "userStore.EnableTwoFactorAuth")
+		return util.Wrap(err)
 	}
 
 	return nil
@@ -114,7 +115,7 @@ func (s *userStore) DisableTwoFactorAuth(ctx context.Context, userId int) error 
 		false,
 		userId,
 	); err != nil {
-		return errors.Wrap(err, "userStore.DisableTwoFactorAuth")
+		return util.Wrap(err)
 	}
 
 	return nil
@@ -126,7 +127,7 @@ func (s *userStore) Delete2faSetupSession(ctx context.Context, userId int) error
 		"DELETE FROM two_factor_setup_sessions WHERE user_id = $1",
 		userId,
 	); err != nil {
-		return errors.Wrap(err, "userStore.Delete2faSetupSession")
+		return util.Wrap(err)
 	}
 
 	return nil
@@ -135,19 +136,18 @@ func (s *userStore) Delete2faSetupSession(ctx context.Context, userId int) error
 func (s *userStore) GenerateRecoveryCode(ctx context.Context, userId int) (*models.RecoveryCode, error) {
 	bytes := make([]byte, 8)
 	if _, err := rand.Read(bytes); err != nil {
-		return nil, errors.Wrap(err, "userStore.GenerateRecoveryCode")
+		return nil, util.Wrap(err)
 	}
 
 	code := base64.URLEncoding.EncodeToString(bytes)[:8]
 
-	row := s.q.QueryRow(ctx, "INSERT INTO recovery_codes (user_id, code) VALUES ($1, $2) RETURNING *", userId, code)
+	rows, err := s.q.Query(ctx, "INSERT INTO recovery_codes (user_id, code) VALUES ($1, $2) RETURNING *", userId, code)
 
-	recoveryCode := &models.RecoveryCode{}
-	if err := util.ScanRowIntoStruct(row, recoveryCode); err != nil {
-		return nil, errors.Wrap(err, "userStore.GenerateRecoveryCode")
+	if err != nil {
+		return nil, util.Wrap(err)
 	}
 
-	return recoveryCode, nil
+	return pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByNameLax[models.RecoveryCode])
 }
 
 func (s *userStore) DeleteRecoveryCodes(ctx context.Context, userId int) error {
@@ -156,7 +156,7 @@ func (s *userStore) DeleteRecoveryCodes(ctx context.Context, userId int) error {
 		"DELETE FROM recovery_codes WHERE user_id = $1",
 		userId,
 	); err != nil {
-		return errors.Wrap(err, "userStore.DeleteRecoveryCodes")
+		return util.Wrap(err)
 	}
 
 	return nil
@@ -165,25 +165,15 @@ func (s *userStore) DeleteRecoveryCodes(ctx context.Context, userId int) error {
 func (s *userStore) GetRecoveryCodesByUserId(ctx context.Context, userId int) ([]*models.RecoveryCode, error) {
 	rows, err := s.q.Query(ctx, "SELECT * FROM recovery_codes WHERE user_id = $1", userId)
 	if err != nil {
-		return nil, errors.Wrap(err, "userStore.GetRecoveryCodesByUserId")
+		return nil, util.Wrap(err)
 	}
 
-	codes := make([]*models.RecoveryCode, 0, 10)
-
-	for rows.Next() {
-		recoveryCode := &models.RecoveryCode{}
-		if err := util.ScanRowIntoStruct(rows, recoveryCode); err != nil {
-			return nil, errors.Wrap(err, "userStore.GetRecoveryCodesByUserId")
-		}
-		codes = append(codes, recoveryCode)
-	}
-
-	return codes, nil
+	return pgx.CollectRows(rows, pgx.RowToAddrOfStructByNameLax[models.RecoveryCode])
 }
 
 func (s *userStore) RedeemRecoveryCode(ctx context.Context, id int) error {
 	if _, err := s.q.Exec(ctx, "UPDATE recovery_codes SET is_redeemed = $1 WHERE id=$2", true, id); err != nil {
-		return errors.Wrap(err, "userStore.RedeemRecoveryCode")
+		return util.Wrap(err)
 	}
 
 	return nil
@@ -194,26 +184,24 @@ func (s *userStore) CreateLoginSession(ctx context.Context, userId int) (int, er
 
 	var loginSessionId int
 	if err := row.Scan(&loginSessionId); err != nil {
-		return -1, errors.Wrap(err, "userStore.CreateLoginSession")
+		return -1, util.Wrap(err)
 	}
 
 	return loginSessionId, nil
 }
 
 func (s *userStore) GetLoginSessionById(ctx context.Context, loginSessionId int) (*models.LoginSession, error) {
-	row := s.q.QueryRow(ctx, "SELECT * FROM login_sessions WHERE id= $1", loginSessionId)
-
-	loginSession := &models.LoginSession{}
-	if err := util.ScanRowIntoStruct(row, loginSession); err != nil {
-		return nil, errors.Wrap(err, "userStore.GetLoginSessionById")
+	rows, err := s.q.Query(ctx, "SELECT * FROM login_sessions WHERE id= $1", loginSessionId)
+	if err != nil {
+		return nil, util.Wrap(err)
 	}
 
-	return loginSession, nil
+	return pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByNameLax[models.LoginSession])
 }
 
 func (s *userStore) DeleteLoginSessionByUserId(ctx context.Context, userId int) error {
 	if _, err := s.q.Exec(ctx, "DELETE FROM login_sessions WHERE user_id= $1", userId); err != nil {
-		return errors.Wrap(err, "userStore.DeleteLoginSessionByUserId")
+		return util.Wrap(err)
 	}
 
 	return nil
@@ -221,7 +209,7 @@ func (s *userStore) DeleteLoginSessionByUserId(ctx context.Context, userId int) 
 
 func (s *userStore) UpdatePassword(ctx context.Context, password string, userId int) error {
 	if _, err := s.q.Exec(ctx, "UPDATE users SET password = $1 WHERE id = $2", password, userId); err != nil {
-		return errors.Wrap(err, "userStore.UpdatePassword")
+		return util.Wrap(err)
 	}
 
 	return nil

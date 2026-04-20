@@ -5,8 +5,10 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+//go:generate mockgen -source=txn_manager.go -destination=../users/mocks/mock_txn_manager.go -package=mocks
 
 // TransactionManager runs a function within a database transaction, handling
 // begin, commit, and rollback automatically. Rollback is invoked if fn returns
@@ -16,15 +18,15 @@ type TransactionManager interface {
 }
 
 type transactionManager struct {
-	pool *Pool
+	pool *pgxpool.Pool
 }
 
-func NewTransactionManager(pool *Pool) TransactionManager {
+func NewTransactionManager(pool *pgxpool.Pool) TransactionManager {
 	return &transactionManager{pool: pool}
 }
 
 func (t *transactionManager) WithTx(ctx context.Context, fn func(tx Querier) error) (err error) {
-	pgxTx, err := t.pool.pool.Begin(ctx)
+	pgxTx, err := t.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
@@ -41,7 +43,7 @@ func (t *transactionManager) WithTx(ctx context.Context, fn func(tx Querier) err
 		}
 	}()
 
-	if err = fn(&txQuerier{tx: pgxTx}); err != nil {
+	if err = fn(pgxTx); err != nil {
 		return err
 	}
 
@@ -50,22 +52,3 @@ func (t *transactionManager) WithTx(ctx context.Context, fn func(tx Querier) err
 	}
 	return nil
 }
-
-// txQuerier adapts a pgx.Tx to the Querier interface.
-type txQuerier struct {
-	tx pgx.Tx
-}
-
-func (q *txQuerier) Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error) {
-	return q.tx.Exec(ctx, sql, arguments...)
-}
-
-func (q *txQuerier) Query(ctx context.Context, sql string, arguments ...any) (DbRows, error) {
-	return q.tx.Query(ctx, sql, arguments...)
-}
-
-func (q *txQuerier) QueryRow(ctx context.Context, sql string, arguments ...any) DbRow {
-	return q.tx.QueryRow(ctx, sql, arguments...)
-}
-
-var _ Querier = (*txQuerier)(nil)
