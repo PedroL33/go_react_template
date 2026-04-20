@@ -1,4 +1,4 @@
-module example/dashboard
+module example/template
 
 go 1.23.3
 
