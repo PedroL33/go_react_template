@@ -1,102 +1,36 @@
 package httpcomm
 
 import (
-	"fmt"
 	"net/http"
 )
 
-type Error interface {
-	Error() string
-	Reasons() interface{}
-	LoggerMessage() string
-	Message() string
-	Status() int
-}
-
 type HttpError struct {
-	status  int
-	message string
-	reasons interface{}
+	Status  int
+	Message string // user-facing
+	Err     error  // underlying cause, for logging only
+	Reasons any    // optional structured payload (e.g. validation map)
 }
 
-func NewHttpError(code int, msg string, reasons interface{}) *HttpError {
-	return &HttpError{
-		status:  code,
-		message: msg,
-		reasons: reasons,
-	}
-}
+func (e *HttpError) Error() string { return e.Message }
 
-func (e *HttpError) Error() string {
-	return fmt.Sprintf("status: %d - errors: %s", e.status, e.message)
-}
+// Unwrap lets errors.Is / errors.As traverse into the cause.
+func (e *HttpError) Unwrap() error { return e.Err }
 
-func (e *HttpError) LoggerMessage() string {
-	return fmt.Sprintf("status: %d - errors: %s - causes: %v", e.status, e.message, e.reasons)
-}
+func (e *HttpError) Trace() string { return e.Err.Error() }
 
-func (e *HttpError) Reasons() interface{} {
-	return e.reasons
+// Constructors — take the cause as an error, not interface{}.
+func NewInternalServerError(cause error, msg string) *HttpError {
+	return &HttpError{Status: http.StatusInternalServerError, Message: msg, Err: cause}
 }
-
-func (e *HttpError) Message() string {
-	return e.message
+func NewBadRequestError(cause error, msg string) *HttpError {
+	return &HttpError{Status: http.StatusBadRequest, Message: msg, Err: cause}
 }
-
-func (e *HttpError) Status() int {
-	return e.status
+func NewUnauthorizedError(cause error, msg string) *HttpError {
+	return &HttpError{Status: http.StatusUnauthorized, Message: msg, Err: cause}
 }
-
-func NewInternalServerError(reasons interface{}, msg string) Error {
-	result := &HttpError{
-		status:  http.StatusInternalServerError,
-		message: msg,
-		reasons: reasons,
-	}
-	return result
+func NewForbiddenError(cause error, msg string) *HttpError {
+	return &HttpError{Status: http.StatusForbidden, Message: msg, Err: cause}
 }
-
-func NewBadGatewayError(reasons interface{}, msg string) Error {
-	result := &HttpError{
-		status:  http.StatusBadGateway,
-		message: msg,
-		reasons: reasons,
-	}
-	return result
-}
-
-func NewBadRequestError(reasons interface{}, msg string) Error {
-	result := &HttpError{
-		status:  http.StatusBadRequest,
-		message: msg,
-		reasons: reasons,
-	}
-	return result
-}
-
-func NewForbiddenError(reasons interface{}, msg string) Error {
-	result := &HttpError{
-		status:  http.StatusForbidden,
-		message: msg,
-		reasons: reasons,
-	}
-	return result
-}
-
-func NewNotFoundError(reasons interface{}, msg string) Error {
-	result := &HttpError{
-		status:  http.StatusNotFound,
-		message: msg,
-		reasons: reasons,
-	}
-	return result
-}
-
-func NewExpiredSessionError(reasons interface{}, msg string) Error {
-	result := &HttpError{
-		status:  http.StatusGone,
-		message: msg,
-		reasons: reasons,
-	}
-	return result
+func NewUnprocessableEntityError(reasons any, msg string) *HttpError {
+	return &HttpError{Status: http.StatusUnprocessableEntity, Message: msg, Reasons: reasons}
 }

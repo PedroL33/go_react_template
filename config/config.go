@@ -12,7 +12,6 @@ type AppConfig struct {
 	Host         string
 	Port         string
 	JwtSecret    string
-	Env          string
 	MigrationUrl string
 }
 
@@ -29,7 +28,6 @@ func (ac *AppConfig) Load() error {
 	ac.Host = os.Getenv("HOST")
 	ac.Port = os.Getenv("PORT")
 	ac.JwtSecret = os.Getenv("JWT_SECRET")
-	ac.Env = os.Getenv("ENVIRONMENT")
 	ac.MigrationUrl = os.Getenv("MIGRATION_URL")
 
 	return nil

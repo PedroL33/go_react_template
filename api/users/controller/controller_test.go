@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"database/sql"
+	"example/dashboard/api/db"
 	"example/dashboard/api/models"
 	"example/dashboard/api/users/mocks"
 	"example/dashboard/api/users/payloads"
@@ -17,6 +18,20 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// expectTxWithStore wires up the common pattern used by controller methods
+// that run work inside a transaction:
+//  1. WithTx invokes its callback with the provided querier.
+//  2. store.WithQuerier(tx) returns the same mock store, so a single set of
+//     EXPECT() calls on mockStore covers both pool- and tx-scoped methods.
+func expectTxWithStore(mockTxnManager *mocks.MockTransactionManager, mockStore *mocks.MockStore, mockQuerier *mocks.MockQuerier) {
+	mockTxnManager.EXPECT().WithTx(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, fn func(db.Querier) error) error {
+			return fn(mockQuerier)
+		},
+	)
+	mockStore.EXPECT().WithQuerier(mockQuerier).Return(mockStore)
+}
+
 func TestUsersController_CreateUser(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
@@ -25,7 +40,7 @@ func TestUsersController_CreateUser(t *testing.T) {
 	mockStore := mocks.NewMockStore(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
 	mockTxnManager := mocks.NewMockTransactionManager(ctrl)
-	mockDbConn := mocks.NewMockDbConn(ctrl)
+	mockQuerier := mocks.NewMockQuerier(ctrl)
 	cfg := &config.AppConfig{}
 
 	userController := NewUsersController(cfg, mockStore, mockTxnManager, mockLogger)
@@ -39,15 +54,13 @@ func TestUsersController_CreateUser(t *testing.T) {
 		Password: "password",
 	}
 
-	mockStore.EXPECT().GetUserByUsername(context.TODO(), "username", nil).Return(nil, pgx.ErrNoRows)
-	mockStore.EXPECT().CreateUser(context.TODO(), gomock.Any(), mockDbConn).Return(user, nil)
-	mockTxnManager.EXPECT().Begin(context.TODO()).Return(mockDbConn, nil)
-	mockDbConn.EXPECT().Commit(context.TODO()).Return(nil)
-	mockDbConn.EXPECT().Rollback(context.TODO()).Return(nil)
+	mockStore.EXPECT().GetUserByUsername(context.TODO(), "username").Return(nil, pgx.ErrNoRows)
+	expectTxWithStore(mockTxnManager, mockStore, mockQuerier)
+	mockStore.EXPECT().CreateUser(context.TODO(), gomock.Any()).Return(user, nil)
+
 	createdUser, err := userController.CreateUser(context.TODO(), createUserRequest)
 	require.NoError(t, err)
 	require.NotNil(t, createdUser)
-
 }
 
 func TestUsersController_Login(t *testing.T) {
@@ -73,7 +86,7 @@ func TestUsersController_Login(t *testing.T) {
 		Username: "username",
 	}
 
-	mockStore.EXPECT().GetUserByUsername(context.TODO(), gomock.Any(), nil).Return(loginUser, nil)
+	mockStore.EXPECT().GetUserByUsername(context.TODO(), gomock.Any()).Return(loginUser, nil)
 
 	loggedInUser, err := userController.Login(context.TODO(), existingUser)
 	require.NoError(t, err)
@@ -112,8 +125,8 @@ func TestUsersController_VerifyLogin(t *testing.T) {
 		},
 	}
 
-	mockStore.EXPECT().GetLoginSessionById(gomock.Any(), gomock.Any(), gomock.Any()).Return(loginSession, nil)
-	mockStore.EXPECT().GetUserById(gomock.Any(), gomock.Any(), gomock.Any()).Return(currentUser, nil)
+	mockStore.EXPECT().GetLoginSessionById(gomock.Any(), gomock.Any()).Return(loginSession, nil)
+	mockStore.EXPECT().GetUserById(gomock.Any(), gomock.Any()).Return(currentUser, nil)
 
 	loginResponse, err := userController.VerifyLogin(context.TODO(), verifyLoginRequest)
 	require.NoError(t, err)
@@ -143,13 +156,12 @@ func TestUsersController_VerifyLoginWithRecoveryCode(t *testing.T) {
 
 	var currentUser = &models.User{Id: 1}
 
-	recoveryCodes := make([]*models.RecoveryCode, 0, 1)
-	recoveryCodes = append(recoveryCodes, &models.RecoveryCode{Code: "test code"})
+	recoveryCodes := []*models.RecoveryCode{{Code: "test code"}}
 
-	mockStore.EXPECT().GetLoginSessionById(gomock.Any(), gomock.Any(), gomock.Any()).Return(loginSession, nil)
-	mockStore.EXPECT().GetUserById(gomock.Any(), gomock.Any(), gomock.Any()).Return(currentUser, nil)
-	mockStore.EXPECT().GetRecoveryCodesByUserId(gomock.Any(), gomock.Any(), gomock.Any()).Return(recoveryCodes, nil)
-	mockStore.EXPECT().RedeemRecoveryCode(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	mockStore.EXPECT().GetLoginSessionById(gomock.Any(), gomock.Any()).Return(loginSession, nil)
+	mockStore.EXPECT().GetUserById(gomock.Any(), gomock.Any()).Return(currentUser, nil)
+	mockStore.EXPECT().GetRecoveryCodesByUserId(gomock.Any(), gomock.Any()).Return(recoveryCodes, nil)
+	mockStore.EXPECT().RedeemRecoveryCode(gomock.Any(), gomock.Any()).Return(nil)
 
 	loginResponse, err := userController.VerifyLoginWithRecoveryCode(context.TODO(), verifyLoginRequest)
 	require.NoError(t, err)
@@ -163,7 +175,7 @@ func TestUsersController_Begin2faSetupSession(t *testing.T) {
 
 	mockStore := mocks.NewMockStore(ctrl)
 	mockTxnManager := mocks.NewMockTransactionManager(ctrl)
-	mockDbConn := mocks.NewMockDbConn(ctrl)
+	mockQuerier := mocks.NewMockQuerier(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
 	cfg := &config.AppConfig{}
 
@@ -175,11 +187,9 @@ func TestUsersController_Begin2faSetupSession(t *testing.T) {
 	userController := NewUsersController(cfg, mockStore, mockTxnManager, mockLogger)
 
 	twoFASession := &models.TwoFactorSetupSession{}
-	mockStore.EXPECT().Create2faSetupSession(context.TODO(), gomock.Any(), gomock.Any()).Return(twoFASession, nil)
-	mockTxnManager.EXPECT().Begin(context.TODO()).Return(mockDbConn, nil)
-	mockStore.EXPECT().Delete2faSetupSession(context.TODO(), gomock.Any(), gomock.Any()).Return(nil)
-	mockDbConn.EXPECT().Commit(context.TODO()).Return(nil)
-	mockDbConn.EXPECT().Rollback(context.TODO()).Return(nil)
+	expectTxWithStore(mockTxnManager, mockStore, mockQuerier)
+	mockStore.EXPECT().Delete2faSetupSession(context.TODO(), gomock.Any()).Return(nil)
+	mockStore.EXPECT().Create2faSetupSession(context.TODO(), gomock.Any()).Return(twoFASession, nil)
 
 	code, err := userController.Begin2faSetupSession(context.TODO(), currentUser)
 	require.NoError(t, err)
@@ -193,7 +203,7 @@ func TestUsersController_Complete2faSetup(t *testing.T) {
 
 	mockStore := mocks.NewMockStore(ctrl)
 	mockTxnManager := mocks.NewMockTransactionManager(ctrl)
-	mockDbConn := mocks.NewMockDbConn(ctrl)
+	mockQuerier := mocks.NewMockQuerier(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
 	cfg := &config.AppConfig{}
 
@@ -213,13 +223,11 @@ func TestUsersController_Complete2faSetup(t *testing.T) {
 		OtpCode: code,
 	}
 
-	mockTxnManager.EXPECT().Begin(context.TODO()).Return(mockDbConn, nil)
-	mockStore.EXPECT().Get2faSetupSessionByUserId(context.TODO(), gomock.Any(), gomock.Any()).Return(twoFaSetupSession, nil)
-	mockDbConn.EXPECT().Rollback(context.TODO()).Return(nil)
-	mockStore.EXPECT().EnableTwoFactorAuth(context.TODO(), gomock.Any(), gomock.Any()).Return(nil)
-	mockStore.EXPECT().GenerateRecoveryCode(context.TODO(), gomock.Any(), gomock.Any()).Return(&models.RecoveryCode{}, nil).Times(10)
-	mockStore.EXPECT().Delete2faSetupSession(context.TODO(), gomock.Any(), gomock.Any()).Return(nil)
-	mockDbConn.EXPECT().Commit(context.TODO()).Return(nil)
+	mockStore.EXPECT().Get2faSetupSessionByUserId(context.TODO(), gomock.Any()).Return(twoFaSetupSession, nil)
+	expectTxWithStore(mockTxnManager, mockStore, mockQuerier)
+	mockStore.EXPECT().EnableTwoFactorAuth(context.TODO(), gomock.Any()).Return(nil)
+	mockStore.EXPECT().GenerateRecoveryCode(context.TODO(), gomock.Any()).Return(&models.RecoveryCode{}, nil).Times(10)
+	mockStore.EXPECT().Delete2faSetupSession(context.TODO(), gomock.Any()).Return(nil)
 
 	codes, err := userController.Complete2faSetup(context.TODO(), request, currentUser)
 	require.NoError(t, err)
@@ -233,7 +241,7 @@ func TestUsersController_Disable2fa(t *testing.T) {
 
 	mockStore := mocks.NewMockStore(ctrl)
 	mockTxnManager := mocks.NewMockTransactionManager(ctrl)
-	mockDbConn := mocks.NewMockDbConn(ctrl)
+	mockQuerier := mocks.NewMockQuerier(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
 	cfg := &config.AppConfig{}
 
@@ -248,11 +256,9 @@ func TestUsersController_Disable2fa(t *testing.T) {
 	err := user.HashPassword()
 	require.NoError(t, err)
 
-	mockTxnManager.EXPECT().Begin(context.TODO()).Return(mockDbConn, nil)
-	mockStore.EXPECT().DisableTwoFactorAuth(context.TODO(), gomock.Any(), gomock.Any()).Return(nil)
-	mockDbConn.EXPECT().Rollback(context.TODO()).Return(nil)
-	mockStore.EXPECT().DeleteRecoveryCodes(context.TODO(), gomock.Any(), gomock.Any()).Return(nil)
-	mockDbConn.EXPECT().Commit(context.TODO()).Return(nil)
+	expectTxWithStore(mockTxnManager, mockStore, mockQuerier)
+	mockStore.EXPECT().DisableTwoFactorAuth(context.TODO(), gomock.Any()).Return(nil)
+	mockStore.EXPECT().DeleteRecoveryCodes(context.TODO(), gomock.Any()).Return(nil)
 
 	err = userController.Disable2fa(context.TODO(), user, disable2faRequest)
 	require.NoError(t, err)
@@ -276,7 +282,7 @@ func TestUsersController_UpdatePassword(t *testing.T) {
 
 	userController := NewUsersController(cfg, mockStore, mockTxnManager, mockLogger)
 
-	mockStore.EXPECT().UpdatePassword(context.TODO(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	mockStore.EXPECT().UpdatePassword(context.TODO(), gomock.Any(), gomock.Any()).Return(nil)
 
 	err = userController.UpdatePassword(context.TODO(), currentUser, request)
 	require.NoError(t, err)
@@ -289,17 +295,15 @@ func TestUsersController_RegenerateRecoveryCodes(t *testing.T) {
 
 	mockStore := mocks.NewMockStore(ctrl)
 	mockTxnManager := mocks.NewMockTransactionManager(ctrl)
-	mockDbConn := mocks.NewMockDbConn(ctrl)
+	mockQuerier := mocks.NewMockQuerier(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
 	cfg := &config.AppConfig{}
 
 	userController := NewUsersController(cfg, mockStore, mockTxnManager, mockLogger)
 
-	mockTxnManager.EXPECT().Begin(context.TODO()).Return(mockDbConn, nil)
-	mockStore.EXPECT().DeleteRecoveryCodes(context.TODO(), gomock.Any(), gomock.Any()).Return(nil)
-	mockStore.EXPECT().GenerateRecoveryCode(context.TODO(), gomock.Any(), gomock.Any()).Return(&models.RecoveryCode{}, nil).Times(10)
-	mockDbConn.EXPECT().Commit(context.TODO()).Return(nil)
-	mockDbConn.EXPECT().Rollback((context.TODO())).Return(nil)
+	expectTxWithStore(mockTxnManager, mockStore, mockQuerier)
+	mockStore.EXPECT().DeleteRecoveryCodes(context.TODO(), gomock.Any()).Return(nil)
+	mockStore.EXPECT().GenerateRecoveryCode(context.TODO(), gomock.Any()).Return(&models.RecoveryCode{}, nil).Times(10)
 
 	currentUser := &models.User{Password: "test"}
 	codes, err := userController.RegenerateRecoveryCodes(context.TODO(), currentUser)

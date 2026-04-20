@@ -133,8 +133,8 @@ func (h *usersHandlers) Begin2faSetup(w http.ResponseWriter, r *http.Request) {
 	var err error
 	currentUser, ok := ctx.Value(middleware.CurrentUserKey).(*models.User)
 	if !ok {
-		h.logger.HttpError(r, httpcomm.NewHttpError(http.StatusInternalServerError, "Error while parsing context", nil))
-		httpcomm.SendErrorResponse(w, httpcomm.NewHttpError(http.StatusInternalServerError, "Invalid credentials", nil))
+		h.logger.HttpError(r, httpcomm.NewInternalServerError(nil, "Error while parsing context"))
+		httpcomm.SendErrorResponse(w, httpcomm.NewInternalServerError(nil, "Invalid credentials"))
 		return
 	}
 
@@ -158,8 +158,8 @@ func (h *usersHandlers) Complete2faSetup(w http.ResponseWriter, r *http.Request)
 
 	currentUser, ok := ctx.Value(middleware.CurrentUserKey).(*models.User)
 	if !ok {
-		h.logger.HttpError(r, httpcomm.NewHttpError(http.StatusInternalServerError, "Error while parsing context", nil))
-		httpcomm.SendErrorResponse(w, httpcomm.NewHttpError(http.StatusInternalServerError, "Invalid credentials.", nil))
+		h.logger.HttpError(r, httpcomm.NewInternalServerError(nil, "Error while parsing context"))
+		httpcomm.SendErrorResponse(w, httpcomm.NewInternalServerError(nil, "Invalid credentials."))
 		return
 	}
 
@@ -194,8 +194,8 @@ func (h *usersHandlers) Disable2fa(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	currentUser, ok := ctx.Value(middleware.CurrentUserKey).(*models.User)
 	if !ok {
-		h.logger.HttpError(r, httpcomm.NewHttpError(http.StatusInternalServerError, "Error while parsing context", nil))
-		httpcomm.SendErrorResponse(w, httpcomm.NewHttpError(http.StatusInternalServerError, "Invalid credentials.", nil))
+		h.logger.HttpError(r, httpcomm.NewInternalServerError(nil, "Error while parsing context"))
+		httpcomm.SendErrorResponse(w, httpcomm.NewInternalServerError(nil, "Invalid credentials."))
 		return
 	}
 
@@ -221,8 +221,8 @@ func (h *usersHandlers) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	currentUser, ok := ctx.Value(middleware.CurrentUserKey).(*models.User)
 	if !ok {
-		h.logger.HttpError(r, httpcomm.NewHttpError(http.StatusInternalServerError, "Error while parsing context", nil))
-		httpcomm.SendErrorResponse(w, httpcomm.NewHttpError(http.StatusInternalServerError, "Invalid credentials.", nil))
+		h.logger.HttpError(r, httpcomm.NewInternalServerError(nil, "Error while parsing context"))
+		httpcomm.SendErrorResponse(w, httpcomm.NewInternalServerError(nil, "Invalid credentials."))
 	}
 
 	var err error
@@ -249,8 +249,8 @@ func (h *usersHandlers) RegenerateRecoveryCodes(w http.ResponseWriter, r *http.R
 
 	currentUser, ok := ctx.Value(middleware.CurrentUserKey).(*models.User)
 	if !ok {
-		h.logger.HttpError(r, httpcomm.NewHttpError(http.StatusInternalServerError, "Error while parsing context", nil))
-		httpcomm.SendErrorResponse(w, httpcomm.NewHttpError(http.StatusInternalServerError, "Invalid credentials.", nil))
+		h.logger.HttpError(r, httpcomm.NewInternalServerError(nil, "Error while parsing context"))
+		httpcomm.SendErrorResponse(w, httpcomm.NewInternalServerError(nil, "Invalid credentials."))
 		return
 	}
 

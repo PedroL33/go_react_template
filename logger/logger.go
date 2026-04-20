@@ -10,6 +10,8 @@ import (
 	"os"
 )
 
+//go:generate mockgen -source=logger.go -destination=../api/users/mocks/mock_logger.go -package=mocks
+
 type Logger interface {
 	Error(err error, args ...any)
 	Info(msg string, args ...any)
@@ -42,20 +44,18 @@ func (l *logger) Warn(msg string, args ...any) {
 
 func (l *logger) HttpError(r *http.Request, err error) {
 	var httpError *httpcomm.HttpError
-	var errorMessage string
-	if errors.As(err, &httpError) {
-		errorMessage = httpError.LoggerMessage()
-	} else {
+
+	if !errors.As(err, &httpError) {
 		l.Warn("Recieved an error that is not an HttpError.")
-		errorMessage = err.Error()
+	} else {
+		l.lgr.Error(
+			"ERROR: "+httpError.Trace(),
+			slog.String("URI", r.RequestURI),
+			slog.String("Method", r.Method),
+			slog.String("Address", r.RemoteAddr),
+			slog.String("Body", GetRequestBody(r.Body)),
+		)
 	}
-	l.lgr.Error(
-		"ERROR: "+errorMessage,
-		slog.String("URI", r.RequestURI),
-		slog.String("Method", r.Method),
-		slog.String("Address", r.RemoteAddr),
-		slog.String("Body", GetRequestBody(r.Body)),
-	)
 }
 
 func (l *logger) HttpSuccess(r *http.Request) {

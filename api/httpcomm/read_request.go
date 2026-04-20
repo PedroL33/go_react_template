@@ -5,8 +5,6 @@ import (
 	"example/dashboard/util"
 	"example/dashboard/validator"
 	"net/http"
-
-	"github.com/pkg/errors"
 )
 
 func ReadRequest(ctx context.Context, r *http.Request, request interface{}) error {
@@ -14,13 +12,13 @@ func ReadRequest(ctx context.Context, r *http.Request, request interface{}) erro
 	err := util.DecodeInto(r, request)
 	if err != nil {
 		// This is only called in the handler level so we want ot return an http error
-		return NewInternalServerError(errors.Wrap(err, "util.ReadRequest"), "Error while reading request.")
+		return NewInternalServerError(util.Wrap(err), "Error while reading request.")
 	}
 
 	errors := validator.ValidateStruct(ctx, request)
 
 	if errors != nil {
-		return NewHttpError(422, "Validation failed.", errors)
+		return NewUnprocessableEntityError(errors, "Validation failed.")
 	}
 
 	return nil

@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-
-	"github.com/pkg/errors"
 )
 
 func DecodeNew[T any](r *http.Request) (T, error) {
@@ -16,13 +14,13 @@ func DecodeNew[T any](r *http.Request) (T, error) {
 
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		return v, errors.Wrap(err, "util.DecodeNew")
+		return v, Wrap(err)
 	}
 
 	r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
 	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
-		return v, errors.Wrap(err, "util.DecodeNew")
+		return v, Wrap(err)
 	}
 
 	r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
@@ -36,13 +34,13 @@ func DecodeInto[T any](r *http.Request, value T) error {
 
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		return errors.Wrap(err, "util.DecodeInto")
+		return Wrap(err)
 	}
 
 	r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
 	if err := json.NewDecoder(r.Body).Decode(value); err != nil {
-		return errors.Wrap(err, "util.DecodeInto")
+		return Wrap(err)
 	}
 
 	r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))

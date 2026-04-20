@@ -17,20 +17,21 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Server struct {
 	logger logger.Logger
 	conf   *config.AppConfig
-	db     db.DbConn
+	pool   *pgxpool.Pool
 }
 
 func NewServer(
 	logger logger.Logger,
 	conf *config.AppConfig,
-	db db.DbConn,
+	pool *pgxpool.Pool,
 ) *Server {
-	return &Server{logger: logger, conf: conf, db: db}
+	return &Server{logger: logger, conf: conf, pool: pool}
 }
 
 func (s *Server) Run() {
@@ -71,9 +72,9 @@ func (s *Server) Run() {
 }
 
 func (s *Server) MapRoutes(router *mux.Router) {
-	txnManager := db.NewTransactionManager(s.db)
+	txnManager := db.NewTransactionManager(s.pool)
 
-	usersStore := store.NewUsersStore(s.db)
+	usersStore := store.NewUsersStore(s.pool)
 	usersController := controller.NewUsersController(s.conf, usersStore, txnManager, s.logger)
 	usersHandler := handlers.NewUsersHandlers(s.conf, usersController, s.logger)
 
